@@ -52,11 +52,18 @@ namespace VibrantbitLauncher.ViewModels.Pages
         public RunPageViewModel()
         {
             javaVersions.AddRange(asyncJavas.Select(x => x.JavaVersion));
-            minecrafts = minecraftParser.GetMinecrafts();
-            minecraftParser.GetMinecrafts().ForEach(x =>
+            try
             {
-                minecraftVersions.Add(new LocalVersion { Version = x.Version.VersionId ,RunCommand=new(RunMinecraft),SettingsCommand = new(Settings)});
-            });
+                minecrafts = minecraftParser.GetMinecrafts();
+                minecraftParser.GetMinecrafts().ForEach(x =>
+                {
+                    minecraftVersions.Add(new LocalVersion { Version = x.Version.VersionId, RunCommand = new(RunMinecraft), SettingsCommand = new(Settings) });
+                });
+            }
+            catch (Exception ex)
+            {
+                snackbarService.Show("错误", $"无法获取本地版本{ex}, ControlAppearance.Danger, null, snackbarService.DefaultTimeOut",ControlAppearance.Danger,null,snackbarService.DefaultTimeOut);
+            }
             RunMinecraftCommand = new RelayCommand<string>(RunMinecraft);
             LoadCommand = new RelayCommand<SnackbarPresenter>(Load);
             RefreshCommand = new RelayCommand(Refresh);
