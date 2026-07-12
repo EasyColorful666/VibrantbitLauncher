@@ -1,0 +1,109 @@
+﻿<Page
+    x:Class="VibrantbitLauncher.Views.Pages.RunPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+    xmlns:local="clr-namespace:VibrantbitLauncher.ViewModels.Pages"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="RunPage"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    mc:Ignorable="d">
+    <Page.DataContext>
+        <local:RunPageViewModel />
+    </Page.DataContext>
+
+    <i:Interaction.Triggers>
+
+        <i:EventTrigger EventName="Loaded">
+
+            <i:InvokeCommandAction Command="{Binding LoadCommand}" CommandParameter="{Binding ElementName=SnackbarPresenter}" />
+
+        </i:EventTrigger>
+
+    </i:Interaction.Triggers>
+    <Grid>
+        <ListBox
+            Margin="20,0,20,100"
+            d:ItemsSource="{d:SampleData ItemCount=5}"
+            ItemsSource="{Binding MinecraftVersions}">
+            <ListBox.Background>
+                <SolidColorBrush Color="LightGray" />
+            </ListBox.Background>
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Margin="5" Orientation="Horizontal">
+                        <!--  图片绑定  -->
+                        <Image
+                            Width="50"
+                            Height="50"
+                            Margin="0,0,10,0"
+                            Source="/Resources/Grass_Block.png" />
+                        <!--  文本信息  -->
+                        <Grid Width="200">
+                            <TextBlock
+                                Width="200"
+                                Height="27"
+                                FontSize="18"
+                                FontWeight="Bold"
+                                Text="{Binding Version}"
+                                TextAlignment="Center" />
+                        </Grid>
+                        <Button
+                            Width="60"
+                            Height="30"
+                            Margin="300,0,0,0"
+                            Command="{Binding RunCommand}"
+                            CommandParameter="{Binding Version}"
+                            Content="运行" />
+                        <Button
+                            Width="60"
+                            Height="30"
+                            Command="{Binding SettingsCommand}"
+                            CommandParameter="{Binding Version}"
+                            Content="设置" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <ui:SnackbarPresenter
+            x:Name="SnackbarPresenter"
+            Margin="-10,0,10,0"
+            Panel.ZIndex="2" />
+        <ui:Button
+            Width="284"
+            Height="60"
+            Margin="506,377,0,0"
+            VerticalAlignment="Top"
+            Command="{Binding RunMinecraftCommand}"
+            CommandParameter="{Binding SelectedValue, ElementName=listBox}"
+            Content="运行" />
+        <TextBlock
+            Margin="10,401,0,0"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            FontSize="18"
+            Text="当前账户:"
+            TextWrapping="Wrap" />
+        <Label
+            Width="299"
+            Height="23"
+            Margin="91,401,0,0"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            FontSize="18"
+            Foreground="Black" />
+        <ui:Button
+            Width="60"
+            Height="60"
+            Margin="440,377,0,0"
+            VerticalAlignment="Top"
+            Command="{Binding RefreshCommand}"
+            Icon="{ui:SymbolIcon FontSize=36,
+                                 Symbol=ArrowSync24}"
+            RenderTransformOrigin="0.173,-0.162" />
+    </Grid>
+</Page>

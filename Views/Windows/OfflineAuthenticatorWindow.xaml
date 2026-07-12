@@ -1,0 +1,40 @@
+﻿<Window
+    x:Class="VibrantbitLauncher.Views.Windows.OfflineAuthenticatorWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:VibrantbitLauncher.Views.Windows"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="OfflineAuthenticatorWindow"
+    Width="340"
+    Height="212"
+    mc:Ignorable="d">
+    <Grid>
+        <Button
+            Width="214"
+            Height="46"
+            Margin="0,119,0,0"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Top"
+            Click="Button_Click"
+            Content="登录">
+            <Button.Background>
+                <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientActiveCaptionColorKey}}" />
+            </Button.Background>
+        </Button>
+        <TextBox
+            x:Name="textBox1"
+            Width="244"
+            Margin="63,50,0,0"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            TextWrapping="Wrap" />
+        <TextBlock
+            Margin="22,60,0,0"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            Text="用户名"
+            TextWrapping="Wrap" />
+    </Grid>
+</Window>

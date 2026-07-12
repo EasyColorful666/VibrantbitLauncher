@@ -1,0 +1,118 @@
+﻿<Page
+    x:Class="VibrantbitLauncher.Views.Pages.AccountPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+    xmlns:local="clr-namespace:VibrantbitLauncher.Views.Pages"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="clr-namespace:VibrantbitLauncher.Models"
+    xmlns:pages="clr-namespace:VibrantbitLauncher.ViewModels.Pages"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="DataPage"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    ScrollViewer.CanContentScroll="False"
+    mc:Ignorable="d">
+    <Page.DataContext>
+        <pages:AccountPageViewModel />
+    </Page.DataContext>
+
+    <i:Interaction.Triggers>
+
+        <i:EventTrigger EventName="Loaded">
+
+            <i:InvokeCommandAction Command="{Binding LoadCommand}" CommandParameter="{Binding ElementName=SnackbarPresenter}" />
+
+        </i:EventTrigger>
+
+    </i:Interaction.Triggers>
+    <Grid>
+        <ui:SnackbarPresenter x:Name="SnackbarPresenter" Panel.ZIndex="2" />
+        <ListBox
+            x:Name="listbox1"
+            Height="340"
+            Margin="40,0,40,117"
+            BorderBrush="Black"
+            BorderThickness="5,5,5,5"
+            Foreground="White"
+            ItemsSource="{Binding Users, Mode=TwoWay}"
+            ScrollViewer.CanContentScroll="True"
+            ScrollViewer.HorizontalScrollBarVisibility="Visible"
+            ScrollViewer.VerticalScrollBarVisibility="Auto"
+            UseLayoutRounding="False">
+
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel
+                        Width=" 212"
+                        Height="300"
+                        Orientation="Horizontal">
+                        <ui:Card
+                            Width="197.5"
+                            Height="296"
+                            Margin="8"
+                            VerticalAlignment="Top"
+                            BorderThickness="0">
+                            <Image
+                                Width="174"
+                                Height="149"
+                                Source="/Views/Pages/gravatar.png"
+                                Stretch="Uniform" />
+
+                            <ui:Card.Footer>
+                                <StackPanel>
+                                    <TextBlock
+                                        Margin="10,0,0,0"
+                                        FontSize="16"
+                                        Text="{Binding Name}"
+                                        TextAlignment="Center" />
+                                    <TextBlock
+                                        FontSize="16"
+                                        Text="{Binding AccountType}"
+                                        TextAlignment="Center" />
+                                    <RadioButton
+                                        HorizontalAlignment="Center"
+                                        Command="{Binding SelectedCommand}"
+                                        CommandParameter="{Binding Account}"
+                                        Content="使用该账户"
+                                        GroupName="user" />
+                                </StackPanel>
+                            </ui:Card.Footer>
+                        </ui:Card>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <ui:Button
+            x:Name="button"
+            Width="230"
+            Height="65"
+            Margin="31,351,0,0"
+            VerticalAlignment="Top"
+            Command="{Binding AuthenticateMicrosoftCommand}"
+            Content="添加微软账户" />
+        <ui:Button
+            x:Name="button1"
+            Width="230"
+            Height="65"
+            Margin="281,353,0,0"
+            VerticalAlignment="Top"
+            Command="{Binding AuthenticateYggdrasilCommand}"
+            Content="添加外置账户" />
+        <ui:Button
+            x:Name="button2"
+            Width="230"
+            Height="65"
+            Margin="530,353,0,0"
+            VerticalAlignment="Top"
+            Command="{Binding AuthenticateOfflineCommand}"
+            Content="添加离线账户" />
+    </Grid>
+</Page>

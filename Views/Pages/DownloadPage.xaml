@@ -1,0 +1,49 @@
+﻿<Page
+    x:Class="VibrantbitLauncher.Views.Pages.DownloadPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:VibrantbitLauncher.ViewModels.Pages"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="DownloadPage"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    Loaded="Page_Loaded"
+    mc:Ignorable="d">
+    <Page.DataContext>
+        <local:DownloadPageViewModel />
+    </Page.DataContext>
+
+    <Grid>
+        <ListBox x:Name="listBox">
+            <ListBox.Background>
+                <SolidColorBrush Color="LightGray" />
+            </ListBox.Background>
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <WrapPanel Margin="5" Orientation="Horizontal">
+                        <!--  图片绑定  -->
+                        <Image
+                            Width="50"
+                            Height="50"
+                            Margin="0,0,10,0"
+                            Source="/Resources/Grass_Block.png" />
+                        <!--  文本信息  -->
+                        <StackPanel Width="200">
+                            <TextBlock FontWeight="Bold" Text="{Binding Version}" />
+                            <TextBlock Foreground="Green" Text="{Binding Date, StringFormat=C}" />
+                        </StackPanel>
+                        <Button
+                            Width="100"
+                            Height="30"
+                            Margin="300,0,0,0"
+                            Command="{Binding DownloadCommand}"
+                            CommandParameter="{Binding Version}"
+                            Content="下载" />
+                    </WrapPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+    </Grid>
+</Page>

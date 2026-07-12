@@ -1,0 +1,61 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="icon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.9" />
+    <PackageReference Include="MinecraftLaunch" Version="4.0.6" />
+    <PackageReference Include="MinecraftLaunch.Base" Version="1.1.18" />
+    <PackageReference Include="MvvmLight" Version="5.4.1.1" />
+    <PackageReference Include="System.Management" Version="10.0.9" />
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
+    <PackageReference Include="WPF-UI.DependencyInjection" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\icon.ico" />
+    <None Remove="Assets\wpfui-icon-256.png" />
+    <None Remove="Assets\wpfui-icon-1024.png" />
+    <None Remove="icon.ico" />
+    <None Remove="Resources\Grass_Block.png" />
+    <None Remove="Views\Pages\gravatar.png" />
+    <None Remove="Views\Windows\bg1.png" />
+    <None Remove="Views\Windows\icon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Services\ApplicationHostService.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="icon.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\Grass_Block.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Views\Pages\gravatar.png" />
+    <Resource Include="Views\Windows\bg1.png" />
+    <Resource Include="Views\Windows\icon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Views\Pages\InstallPage.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+
+</Project>
