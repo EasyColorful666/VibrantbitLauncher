@@ -39,33 +39,35 @@ namespace VibrantbitLauncher.Views.Pages
         }
         public async void LoadMcVersions()
         {
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                listBox.Items.Clear();
+            });
             var entries = await VanillaInstaller.EnumerableMinecraftAsync();
             foreach (var entry in entries)
             {
-                if (listBox.Items.Contains(new McVersion
+                McVersion mc = new McVersion
                 {
                     Version = entry.McVersion,
                     Date = entry.ReleaseTime.ToString("yyyy-MM-dd"),
                     DownloadCommand = new RelayCommand<string>(viewModel.Download)
 
-                }))
-                {
-                    break;
-                }
-                else
+                };
+                if (!listBox.Items.Cast<McVersion>().Any(x => x == mc))
                 {
                     App.Current.Dispatcher.Invoke(() =>
                     {
-                        listBox.Items.Add(new McVersion
-                        {
-                            Version = entry.McVersion,
-                            Date = entry.ReleaseTime.ToString("yyyy-MM-dd"),
-                            DownloadCommand = new RelayCommand<string>(viewModel.Download)
-
-                        });
+                        listBox.Items.Add(mc);
                     });
                 }
+                else
+                {
+                    break;
+                }
+                
+                  
             }
+
         }
     }
     public class McVersion

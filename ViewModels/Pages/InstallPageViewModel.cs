@@ -139,7 +139,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
             
 
 
-            await Task.Run(() =>
+            await Task.Run(async () =>
             {
                 try
                 {
@@ -149,10 +149,10 @@ namespace VibrantbitLauncher.ViewModels.Pages
                         InstallProgress = (int)(arg.Progress * 100);
                         Speed = (arg.IsStepSupportSpeed ? $"{arg.Speed}" : "N/A");
                     };
-                    var minecraft = installer.InstallAsync();
+                    var minecraft = await installer.InstallAsync();
                     App.Current.Dispatcher.Invoke((Action)(() =>
                     {
-                        snackbarService.Show("安装完成", $"安装完成: {minecraft.Result.Id}", ControlAppearance.Success, null, snackbarService.DefaultTimeOut);
+                        snackbarService.Show("安装完成", $"安装完成: {minecraft.Id}", ControlAppearance.Success, null, snackbarService.DefaultTimeOut);
                     }));
                 }
                 catch (Exception ex)

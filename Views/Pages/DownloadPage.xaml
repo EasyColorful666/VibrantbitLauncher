@@ -15,7 +15,11 @@
     </Page.DataContext>
 
     <Grid>
-        <ListBox x:Name="listBox">
+        <ListBox
+            x:Name="listBox"
+            ScrollViewer.CanContentScroll="False"
+            VirtualizingPanel.IsVirtualizing="False"
+            VirtualizingPanel.VirtualizationMode="Standard">
             <ListBox.Background>
                 <SolidColorBrush Color="LightGray" />
             </ListBox.Background>

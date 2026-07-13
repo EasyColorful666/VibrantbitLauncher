@@ -77,8 +77,6 @@ namespace VibrantbitLauncher
         { 
             await _host.StartAsync();
 
-            
-
             InitializeHelper.Initialize(settings => {
                 settings.MaxThread = 256; // 最大下载线程
                 settings.MaxFragment = 128; // 最大文件分片数量

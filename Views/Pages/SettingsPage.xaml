@@ -13,7 +13,6 @@
                                      IsDesignTimeCreatable=False}"
     d:DesignHeight="450"
     d:DesignWidth="800"
-    
     mc:Ignorable="d">
     <Page.DataContext>
         <vm:SettingsPageViewModel />
@@ -55,24 +54,8 @@
             x:Name="textBlock"
             Margin="0,356,0,27"
             TextWrapping="Wrap">
-            <Run Text="Colorful craft launcher4是colorful craft launcher的新版, 更新了UI,更新了许多逻辑,修复了bug,更多功能敬请期待,如有改进意见,请联系" />
-            <Run Text=" " />
-            <Run Language="zh-cn" Text="chensiyuan" />
-            <Run Text=" " />
-            <Run Text="7788999" />
-            <Run Text=" " />
-            <Run Language="zh-cn" Text="@" />
-            <Run Text=" " />
-            <Run Text="163" />
-            <Run Text=" " />
-            <Run Language="zh-cn" Text="." />
-            <Run Text=" " />
-            <Run Text="com" />
-            <Run Text=" " />
-            <Run Language="zh-cn" Text="." />
-            <LineBreak />
-            <Run Language="zh-cn" />
-            <LineBreak />
+            <Run Text="Colorful craft launcher4是colorful craft launcher的新版, 更新了UI,更新了许多逻辑,修复了bug,更多功能敬请期待" />
+
             <Run Language="zh-cn" Text="制作不易,敬请谅解!" />
         </ui:TextBlock>
         <TextBlock Margin="0,142,0,292" Text="背景" />

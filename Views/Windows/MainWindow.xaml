@@ -11,6 +11,7 @@
     Title="ColorfulCraftLauncher IV"
     Width="950"
     Height="600"
+    d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel}"
     Background="#3FFFFFFF"
     DataContext="{x:Type vm:MainWindowViewModel}"
     ExtendsContentIntoTitleBar="True"
@@ -92,6 +93,7 @@
             Grid.Row="0"
             Background="#7200D6FF"
             CloseWindowByDoubleClickOnIcon="True"
-            ShowMaximize="False" FontSize="16" />
+            FontSize="16"
+            ShowMaximize="False" />
     </Grid>
 </ui:FluentWindow>

@@ -6,6 +6,7 @@ using MinecraftLaunch.Base.Models.Game;
 using MinecraftLaunch.Components.Authenticator;
 using MinecraftLaunch.Extensions;
 using MinecraftLaunch.Utilities;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Security.Principal;
 using System.Windows.Media;
@@ -15,15 +16,16 @@ using VibrantbitLauncher.Views.Windows;
 using Wpf.Ui;
 using Wpf.Ui.Abstractions.Controls;
 using Wpf.Ui.Controls;
+using Xunit.Internal;
 namespace VibrantbitLauncher.ViewModels.Pages
 {
     public partial class RunPageViewModel : ViewModelBase
     {
         private MinecraftParser minecraftParser = ".\\.minecraft";
-        List<JavaEntry> asyncJavas = [.. JavaUtil.EnumerableJavaAsync().ToBlockingEnumerable()];
-        List<MinecraftEntry> minecrafts = [];
-        List<LocalVersion> minecraftVersions = [];
-        List<string> javaVersions = [];
+        ObservableCollection<JavaEntry> asyncJavas = [.. JavaUtil.EnumerableJavaAsync().ToBlockingEnumerable()];
+        ObservableCollection<MinecraftEntry> minecrafts = [];
+        ObservableCollection<LocalVersion> minecraftVersions = [];
+        ObservableCollection<string> javaVersions = [];
         MinecraftRunner runner;
         private SnackbarService snackbarService = new();
         string selectedVersion = "";
@@ -33,7 +35,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
         public RelayCommand<SnackbarPresenter> LoadCommand { get; set; }
         public RelayCommand RefreshCommand { get; set; }
 
-        public List<LocalVersion> MinecraftVersions
+        public ObservableCollection<LocalVersion> MinecraftVersions
         {
             get => minecraftVersions;
             set => Set(ref minecraftVersions, value);
@@ -51,10 +53,14 @@ namespace VibrantbitLauncher.ViewModels.Pages
 
         public RunPageViewModel()
         {
-            javaVersions.AddRange(asyncJavas.Select(x => x.JavaVersion));
+            asyncJavas.ForEach(x =>
+            {
+                javaVersions.Add(x.JavaVersion);
+            });
             try
             {
-                minecrafts = minecraftParser.GetMinecrafts();
+                minecrafts = new ObservableCollection<MinecraftEntry>( minecraftParser.GetMinecrafts());
+                minecrafts.Clear();
                 minecraftParser.GetMinecrafts().ForEach(x =>
                 {
                     minecraftVersions.Add(new LocalVersion { Version = x.Version.VersionId, RunCommand = new(RunMinecraft), SettingsCommand = new(Settings) });
@@ -73,12 +79,12 @@ namespace VibrantbitLauncher.ViewModels.Pages
         {
             Task.Run(() =>
             {
-                minecraftParser = ".\\.minecraft";
-                minecrafts = minecraftParser.GetMinecrafts();
-                minecraftVersions.Clear();
+                minecraftParser = new(".\\.minecraft");
+                minecrafts = new ObservableCollection<MinecraftEntry>(minecraftParser.GetMinecrafts());
+                MinecraftVersions.Clear();
                 minecraftParser.GetMinecrafts().ForEach(x =>
                 {
-                    minecraftVersions.Add(new LocalVersion { Version = x.Version.VersionId, RunCommand = new(RunMinecraft), SettingsCommand = new(Settings) });
+                    MinecraftVersions.Add(new LocalVersion { Version = x.Version.VersionId, RunCommand = new(RunMinecraft), SettingsCommand = new(Settings) });
                 });
             });
         }
