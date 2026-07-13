@@ -5,3 +5,5 @@
 /.vs
 /bin/x64/Debug/net9.0-windows
 /obj
+/Properties/PublishProfiles
+/publish
