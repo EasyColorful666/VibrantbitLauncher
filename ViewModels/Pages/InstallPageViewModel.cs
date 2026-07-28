@@ -146,9 +146,9 @@ namespace VibrantbitLauncher.ViewModels.Pages
                     installer.ProgressChanged += (_, arg) =>
                     {
                         InstallStep = $"{arg.FinishedStepTaskCount}/{arg.TotalStepTaskCount} ";
-                        InstallProgress = (int)(arg.Progress * 100);
-                        Speed = (arg.IsStepSupportSpeed ? $"{arg.Speed}" : "N/A");
-                    };
+                        InstallProgress = (int)(arg.Progress);
+                        Speed = (arg.IsStepSupportSpeed ? $"{arg.Speed / 1024 / 1024}" : "N/A");
+                    }; 
                     var minecraft = await installer.InstallAsync();
                     App.Current.Dispatcher.Invoke((Action)(() =>
                     {

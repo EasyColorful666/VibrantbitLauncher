@@ -10,25 +10,33 @@
     Height="375"
     mc:Ignorable="d">
 
-    <StackPanel Orientation="Vertical">
-        <ui:CardControl Icon="{ui:SymbolIcon FlashSettings24}">
-            <ui:CardControl.Header>
-                <StackPanel>
-                    <ui:TextBlock
-                        Margin="0"
-                        FontTypography="BodyStrong"
-                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                        Text="This is the header text"
-                        TextWrapping="WrapWithOverflow" />
-                    <ui:TextBlock
-                        Appearance="Secondary"
-                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                        Text="This is a description text."
-                        TextWrapping="WrapWithOverflow" />
+    <Grid>
+        <StackPanel
+            Grid.Row="1"
+            Height="345"
+            Orientation="Vertical">
+            <ui:CardControl Icon="{ui:SymbolIcon FlashSettings24}">
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <ui:TextBlock
+                            Margin="0"
+                            FontTypography="BodyStrong"
+                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                            Text="This is the header text"
+                            TextWrapping="WrapWithOverflow" />
+                        <ui:TextBlock
+                            Appearance="Secondary"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="This is a description text."
+                            TextWrapping="WrapWithOverflow" />
 
-                </StackPanel>
-            </ui:CardControl.Header>
-        </ui:CardControl>
-    </StackPanel>
+                    </StackPanel>
+                </ui:CardControl.Header>
+            </ui:CardControl>
+        </StackPanel>
+        <ui:TitleBar Title="设置版本" Height="30" />
+    </Grid>
+
+
 </ui:FluentWindow>
 

@@ -58,32 +58,9 @@
 
             <Run Language="zh-cn" Text="制作不易,敬请谅解!" />
         </ui:TextBlock>
-        <TextBlock Margin="0,142,0,292" Text="背景" />
-        <RadioButton
-            x:Name="radioButton1"
-            Margin="10,163,0,0"
-            VerticalAlignment="Top"
-            Content="背景1"
-            GroupName="bg"
-            IsChecked="True" />
-        <RadioButton
-            x:Name="radioButton2"
-            Margin="10,195,0,0"
-            VerticalAlignment="Top"
-            Content="背景2"
-            GroupName="bg" />
-        <RadioButton
-            x:Name="radioButton3"
-            Margin="10,225,0,0"
-            VerticalAlignment="Top"
-            Content="背景3"
-            GroupName="bg"
-            IsChecked="False" />
-        <RadioButton
-            x:Name="radioButton4"
-            Margin="10,257,0,0"
-            VerticalAlignment="Top"
-            Content="背景4"
-            GroupName="bg" />
+        <ui:TextBlock Margin="0,142,0,292" Text="背景" />
+        <ui:TextBox HorizontalAlignment="Left" Margin="10,172,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="345" IsReadOnly="True"/>
+        <ui:Button Content="选择" Margin="360,172,0,0" VerticalAlignment="Top" Height="35" Click="Button_Click"/>
+
     </Grid>
 </Page>

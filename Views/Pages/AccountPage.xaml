@@ -28,16 +28,16 @@
 
     </i:Interaction.Triggers>
     <Grid>
-        <ui:SnackbarPresenter x:Name="SnackbarPresenter" Panel.ZIndex="2" />
+        <ui:SnackbarPresenter x:Name="SnackbarPresenter" />
         <ListBox
             x:Name="listbox1"
             Height="340"
-            Margin="40,0,40,117"
+            Margin="32,0,68,110"
             BorderBrush="Black"
             BorderThickness="5,5,5,5"
             Foreground="White"
-            ItemsSource="{Binding Users, Mode=TwoWay}"
-            ScrollViewer.CanContentScroll="True"
+            ItemsSource="{Binding Users}"
+            ScrollViewer.CanContentScroll="False"
             ScrollViewer.HorizontalScrollBarVisibility="Visible"
             ScrollViewer.VerticalScrollBarVisibility="Auto"
             UseLayoutRounding="False">
@@ -63,7 +63,7 @@
                             <Image
                                 Width="174"
                                 Height="149"
-                                Source="/Views/Pages/gravatar.png"
+                                Source="{Binding ImagePath}"
                                 Stretch="Uniform" />
 
                             <ui:Card.Footer>
@@ -92,25 +92,25 @@
         </ListBox>
         <ui:Button
             x:Name="button"
-            Width="230"
+            Width="218"
             Height="65"
-            Margin="31,351,0,0"
+            Margin="53,343,0,0"
             VerticalAlignment="Top"
             Command="{Binding AuthenticateMicrosoftCommand}"
             Content="添加微软账户" />
         <ui:Button
             x:Name="button1"
-            Width="230"
+            Width="216"
             Height="65"
-            Margin="281,353,0,0"
+            Margin="276,345,0,0"
             VerticalAlignment="Top"
             Command="{Binding AuthenticateYggdrasilCommand}"
             Content="添加外置账户" />
         <ui:Button
             x:Name="button2"
-            Width="230"
+            Width="211"
             Height="65"
-            Margin="530,353,0,0"
+            Margin="497,345,0,0"
             VerticalAlignment="Top"
             Command="{Binding AuthenticateOfflineCommand}"
             Content="添加离线账户" />

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System; // 补全String使用
 using System.Reflection;
 using System.Windows.Input;
+using GalaSoft.MvvmLight.Messaging;
 
 namespace VibrantbitLauncher.ViewModels.Pages
 {
@@ -19,8 +20,6 @@ namespace VibrantbitLauncher.ViewModels.Pages
 
         public SettingsPageViewModel()
         {
-            
-            // 初始化切换主题命令
             ChangeThemeCommand = new RelayCommand<string>(OnChangeTheme);
         }
 
@@ -82,6 +81,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
                     CurrentTheme = ApplicationTheme.Dark;
                     break;
             }
+
         }
     }
 }

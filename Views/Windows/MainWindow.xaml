@@ -8,15 +8,16 @@
     xmlns:pages="clr-namespace:VibrantbitLauncher.Views.Pages"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:vm="clr-namespace:VibrantbitLauncher.ViewModels.Windows"
-    Title="ColorfulCraftLauncher IV"
-    Width="950"
-    Height="600"
+    Title="VibrantbitLauncher"
+    Width="870"
+    Height="520"
     d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel}"
-    Background="#3FFFFFFF"
+    Background="#26FFFFFF"
     DataContext="{x:Type vm:MainWindowViewModel}"
     ExtendsContentIntoTitleBar="True"
     FontFamily="HarmonyOS Sans Black"
     Icon="/Views/Windows/icon.ico"
+    ResizeMode="NoResize"
     WindowBackdropType="Mica"
     WindowCornerPreference="Round"
     WindowStartupLocation="CenterScreen"
@@ -31,13 +32,7 @@
             x:Name="RootNavigation"
             Grid.Row="1"
             Padding="42,0,42,0"
-            BreadcrumbBar="{Binding ElementName=BreadcrumbBar}"
             PaneDisplayMode="LeftFluent">
-
-
-            <ui:NavigationView.Header>
-                <ui:BreadcrumbBar x:Name="BreadcrumbBar" Margin="42,32,42,20" />
-            </ui:NavigationView.Header>
             <ui:NavigationView.ContentOverlay>
                 <Grid>
                     <ui:SnackbarPresenter x:Name="SnackbarPresenter" />
@@ -82,16 +77,10 @@
 
         </ui:NavigationView>
 
-        <ContentPresenter
-            x:Name="RootContentDialog"
-            Grid.Row="0"
-            Grid.RowSpan="2" />
-
         <ui:TitleBar
             x:Name="TitleBar"
             Title="VibrantbitLauncher"
             Grid.Row="0"
-            Background="#7200D6FF"
             CloseWindowByDoubleClickOnIcon="True"
             FontSize="16"
             ShowMaximize="False" />

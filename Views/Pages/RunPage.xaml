@@ -26,15 +26,23 @@
     </i:Interaction.Triggers>
     <Grid>
         <ListBox
-            Margin="20,0,20,100"
-            d:ItemsSource="{d:SampleData ItemCount=5}"
-            ItemsSource="{Binding MinecraftVersions}">
+            x:Name="listBox"
+            Margin="20,60,70,40"
+            ItemsSource="{Binding MinecraftVersions}"
+            ScrollViewer.CanContentScroll="True"
+            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+            ScrollViewer.VerticalScrollBarVisibility="Visible">
             <ListBox.Background>
                 <SolidColorBrush Color="LightGray" />
             </ListBox.Background>
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Margin="5" Orientation="Horizontal">
+                    <VirtualizingStackPanel Margin="5" Orientation="Horizontal">
                         <!--  图片绑定  -->
                         <Image
                             Width="50"
@@ -54,7 +62,7 @@
                         <Button
                             Width="60"
                             Height="30"
-                            Margin="300,0,0,0"
+                            Margin="200,0,0,0"
                             Command="{Binding RunCommand}"
                             CommandParameter="{Binding Version}"
                             Content="运行" />
@@ -64,30 +72,15 @@
                             Command="{Binding SettingsCommand}"
                             CommandParameter="{Binding Version}"
                             Content="设置" />
-                    </StackPanel>
+                    </VirtualizingStackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
 
         <ui:SnackbarPresenter
             x:Name="SnackbarPresenter"
-            Margin="-10,0,10,0"
+            Margin="-10,0,0,0"
             Panel.ZIndex="2" />
-        <ui:Button
-            Width="284"
-            Height="60"
-            Margin="506,377,0,0"
-            VerticalAlignment="Top"
-            Command="{Binding RunMinecraftCommand}"
-            CommandParameter="{Binding SelectedValue, ElementName=listBox}"
-            Content="运行" />
-        <TextBlock
-            Margin="10,401,0,0"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Top"
-            FontSize="18"
-            Text="当前账户:"
-            TextWrapping="Wrap" />
         <Label
             Width="299"
             Height="23"
@@ -99,7 +92,7 @@
         <ui:Button
             Width="60"
             Height="60"
-            Margin="440,377,0,0"
+            Margin="20,0,0,0"
             VerticalAlignment="Top"
             Command="{Binding RefreshCommand}"
             Icon="{ui:SymbolIcon FontSize=36,

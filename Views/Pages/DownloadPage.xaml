@@ -5,6 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:VibrantbitLauncher.ViewModels.Pages"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="DownloadPage"
     d:DesignHeight="450"
     d:DesignWidth="800"
@@ -15,17 +16,23 @@
     </Page.DataContext>
 
     <Grid>
+        <ui:SnackbarPresenter x:Name="SnackbarPresenter" Margin="0,0,140,0" />
         <ListBox
             x:Name="listBox"
-            ScrollViewer.CanContentScroll="False"
-            VirtualizingPanel.IsVirtualizing="False"
-            VirtualizingPanel.VirtualizationMode="Standard">
+            Margin="0,37,140,0"
+            VirtualizingPanel.IsVirtualizing="True"
+            VirtualizingPanel.VirtualizationMode="Recycling" d:ItemsSource="{d:SampleData ItemCount=5}">
             <ListBox.Background>
                 <SolidColorBrush Color="LightGray" />
             </ListBox.Background>
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <WrapPanel Margin="5" Orientation="Horizontal">
+                    <VirtualizingStackPanel Margin="5" Orientation="Horizontal">
                         <!--  图片绑定  -->
                         <Image
                             Width="50"
@@ -33,21 +40,71 @@
                             Margin="0,0,10,0"
                             Source="/Resources/Grass_Block.png" />
                         <!--  文本信息  -->
-                        <StackPanel Width="200">
+                        <VirtualizingStackPanel Width="200">
                             <TextBlock FontWeight="Bold" Text="{Binding Version}" />
                             <TextBlock Foreground="Green" Text="{Binding Date, StringFormat=C}" />
-                        </StackPanel>
+                        </VirtualizingStackPanel>
                         <Button
                             Width="100"
                             Height="30"
-                            Margin="300,0,0,0"
+                            Margin="190,0,0,0"
                             Command="{Binding DownloadCommand}"
                             CommandParameter="{Binding Version}"
                             Content="下载" />
-                    </WrapPanel>
+                    </VirtualizingStackPanel>
+
+
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
+        <ui:TextBox
+            x:Name="textBox"
+            Width="607"
+            Height="26"
+            Margin="9,0,0,0"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            RenderTransformOrigin="0.5,0.5"
+            TextChanged="TextBox_TextChanged"
+            TextWrapping="Wrap" FontSize="16">
+            <ui:TextBox.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform />
+                    <SkewTransform AngleY="0.095" />
+                    <RotateTransform />
+                    <TranslateTransform Y="0.498" />
+                </TransformGroup>
+            </ui:TextBox.RenderTransform>
+            <ui:TextBox.Resources>
+                <VisualBrush
+                    x:Key="HelpBrush"
+                    AlignmentX="Left"
+                    Opacity="0.5"
+                    Stretch="None"
+                    TileMode="None">
+                    <VisualBrush.Visual>
+                        <TextBlock
+                            Cursor=""
+                            FontSize="16"
+                            FontStyle="Italic"
+                            Text="查找版本" />
+                    </VisualBrush.Visual>
+                </VisualBrush>
+            </ui:TextBox.Resources>
+            <ui:TextBox.Style>
+                <Style TargetType="TextBox">
+                    <Style.Triggers>
+                        <Trigger Property="Text" Value="{x:Null}">
+                            <Setter Property="Background" Value="{StaticResource HelpBrush}" />
+                        </Trigger>
+                        <Trigger Property="Text" Value="">
+                            <Setter Property="Background" Value="{StaticResource HelpBrush}" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </ui:TextBox.Style>
+        </ui:TextBox>
+
 
     </Grid>
 </Page>

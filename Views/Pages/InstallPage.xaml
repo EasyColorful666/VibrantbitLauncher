@@ -24,7 +24,7 @@
 
     </i:Interaction.Triggers>
     <Grid>
-        <ui:SnackbarPresenter x:Name="SnackbarPresenter" Panel.ZIndex="2" />
+        <ui:SnackbarPresenter x:Name="SnackbarPresenter" Panel.ZIndex="2" Margin="0,0,85,0" />
         <TextBlock
             x:Name="textBlock"
             Margin="10,10,0,0"

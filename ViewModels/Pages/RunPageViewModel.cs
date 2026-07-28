@@ -1,20 +1,12 @@
-﻿using GalaSoft.MvvmLight;
-using GalaSoft.MvvmLight.CommandWpf;
-using GalaSoft.MvvmLight.Messaging;
-using MinecraftLaunch.Base.Models.Authentication;
+﻿using GalaSoft.MvvmLight.Messaging;
 using MinecraftLaunch.Base.Models.Game;
-using MinecraftLaunch.Components.Authenticator;
 using MinecraftLaunch.Extensions;
 using MinecraftLaunch.Utilities;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Security.Principal;
-using System.Windows.Media;
-using VibrantbitLauncher.Models;
 using VibrantbitLauncher.ViewModels.Windows;
 using VibrantbitLauncher.Views.Windows;
 using Wpf.Ui;
-using Wpf.Ui.Abstractions.Controls;
 using Wpf.Ui.Controls;
 using Xunit.Internal;
 namespace VibrantbitLauncher.ViewModels.Pages
@@ -31,7 +23,6 @@ namespace VibrantbitLauncher.ViewModels.Pages
         string selectedVersion = "";
         private string accountName;
 
-        public RelayCommand<string> RunMinecraftCommand { get; set; }
         public RelayCommand<SnackbarPresenter> LoadCommand { get; set; }
         public RelayCommand RefreshCommand { get; set; }
 
@@ -59,7 +50,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
             });
             try
             {
-                minecrafts = new ObservableCollection<MinecraftEntry>( minecraftParser.GetMinecrafts());
+                minecrafts = new ObservableCollection<MinecraftEntry>(minecraftParser.GetMinecrafts());
                 minecrafts.Clear();
                 minecraftParser.GetMinecrafts().ForEach(x =>
                 {
@@ -68,9 +59,8 @@ namespace VibrantbitLauncher.ViewModels.Pages
             }
             catch (Exception ex)
             {
-                snackbarService.Show("错误", $"无法获取本地版本{ex}, ControlAppearance.Danger, null, snackbarService.DefaultTimeOut",ControlAppearance.Danger,null,snackbarService.DefaultTimeOut);
+                snackbarService.Show("错误", $"无法获取本地版本{ex}, ControlAppearance.Danger, null, snackbarService.DefaultTimeOut", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
             }
-            RunMinecraftCommand = new RelayCommand<string>(RunMinecraft);
             LoadCommand = new RelayCommand<SnackbarPresenter>(Load);
             RefreshCommand = new RelayCommand(Refresh);
 
@@ -109,9 +99,9 @@ namespace VibrantbitLauncher.ViewModels.Pages
         }
         async void RunMinecraft(string McVersion)
         {
-            if (!string.IsNullOrEmpty(McVersion)) 
+            if (!string.IsNullOrEmpty(McVersion))
             {
-                MinecraftEntry selectedMinecraftEntry = minecrafts.First(x => x.Version.VersionId == McVersion);
+                MinecraftEntry selectedMinecraftEntry = minecraftParser.GetMinecraft(McVersion);
                 runner = new(new LaunchConfig
                 {
                     Account = MainWindowViewModel.MainModel.Account,
@@ -120,42 +110,42 @@ namespace VibrantbitLauncher.ViewModels.Pages
                     LauncherName = "VibrantbitLauncher",
                     JavaPath = selectedMinecraftEntry.GetAppropriateJava(asyncJavas),
                 }, minecraftParser);
-                    try
+                try
+                {
+                    snackbarService.Show($"正在启动 {selectedMinecraftEntry.Version.VersionId}，请稍等...", "提示", ControlAppearance.Info, null, snackbarService.DefaultTimeOut);
+                    var process = await runner.RunAsync(selectedMinecraftEntry);
+                    process.Started += (_, _) => {
+                        App.Current.Dispatcher.Invoke(() => {
+                            snackbarService.Show("成功", "Minecraft 已启动", ControlAppearance.Success, null, snackbarService.DefaultTimeOut);
+                        });
+                    };
+                    process.OutputLogReceived += (_, arg) => writeLog(arg.Data.Time, arg.Data.Log);
+                    process.Exited += (_, arg) =>
                     {
-                        snackbarService.Show($"正在启动 {selectedMinecraftEntry.Version.VersionId}，请稍等...", "提示", ControlAppearance.Info ,null ,snackbarService.DefaultTimeOut);
-                        var process = await runner.RunAsync(selectedMinecraftEntry);
-                        process.Started += (_, _) => {
-                            App.Current.Dispatcher.Invoke(() => {
-                                snackbarService.Show("成功", "Minecraft 已启动", ControlAppearance.Success, null, snackbarService.DefaultTimeOut);
-                            });
-                        }; 
-                        process.OutputLogReceived += (_, arg) => writeLog(arg.Data.Time,arg.Data.Log);
-                        process.Exited += (_, arg) =>
-                        {
-                            App.Current.Dispatcher.Invoke(() => {
-                                snackbarService.Show("提示", $"Minecraft 已退出，{process.ArgumentList}", ControlAppearance.Info, null, snackbarService.DefaultTimeOut);
-                            } );
-                        };
-                    }
-                    catch (Exception)
-                    {
-                        snackbarService.Show("错误", "请登录一个用户", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
-                    }
-                
+                        App.Current.Dispatcher.Invoke(() => {
+                            snackbarService.Show("提示", $"Minecraft 已退出，{process.ArgumentList}", ControlAppearance.Info, null, snackbarService.DefaultTimeOut);
+                        });
+                    };
+                }
+                catch (Exception)
+                {
+                    snackbarService.Show("错误", "请登录一个用户", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
+                }
+
             }
-            else 
+            else
             {
-                snackbarService.Show("错误", "请选择一个版本", ControlAppearance.Danger,null,snackbarService.DefaultTimeOut);
+                snackbarService.Show("错误", "请选择一个版本", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
             }
 
         }
-        void writeLog(string time,string message)
+        void writeLog(string time, string message)
         {
             using (StreamWriter sw = new StreamWriter("log.txt", true))
             {
                 sw.WriteLine($"{time}: {message}");
             }
-        } 
+        }
     }
     public class LocalVersion
     {

@@ -9,70 +9,78 @@
     Title="DashboardPage"
     d:DesignHeight="450"
     d:DesignWidth="800"
-    Loaded="Page_Loaded"
     mc:Ignorable="d">
     <Page.DataContext>
         <local:DashboardPageViewModel />
     </Page.DataContext>
-    <Grid Height="450" VerticalAlignment="Center">
+    <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="800" />
         </Grid.ColumnDefinitions>
-        <ui:TextBox
-            x:Name="textBox"
-            Grid.Column="1"
-            Width="780"
-            Height="215"
-            Margin="10,225,0,0"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Top"
-            AcceptsReturn="True"
-            FontFamily="HarmonyOS Sans Black"
-            IsReadOnly="True"
-            Text="{Binding HardwareInformation}"
-            TextWrapping="Wrap"
-            VerticalScrollBarVisibility="Visible" />
-        <ui:TextBlock
-            Grid.Column="1"
-            Width="255"
-            Height="45"
+        <ListBox
+            x:Name="listbox1"
+            Margin="0,60,40,31"
+            d:ItemsSource="{d:SampleData ItemCount=10}"
+            BorderBrush="Black"
+            BorderThickness="5,5,5,5"
+            Foreground="White"
+            ScrollViewer.CanContentScroll="False"
+            ScrollViewer.HorizontalScrollBarVisibility="Auto"
+            ScrollViewer.VerticalScrollBarVisibility="Auto"
+            UseLayoutRounding="False">
+
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel
+                        Width="780"
+                        IsItemsHost="True"
+                        Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="Width" Value="240" />
+                    <Setter Property="Height" Value="175" />
+                    <Setter Property="Padding" Value="0" />
+                </Style>
+            </ListBox.ItemContainerStyle>
+
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <ui:Card
+                        Width="220"
+                        Height="150"
+                        Margin="8"
+                        VerticalAlignment="Top"
+                        BorderThickness="0">
+
+                        <ui:Card.Footer>
+                            <!--  移除ScrollViewer，无滚动条  -->
+                            <TextBlock
+                                FontFamily="HarmonyOS Sans Black"
+                                Text="{Binding Title}"
+                                TextAlignment="Center"
+                                TextWrapping="WrapWithOverflow" />
+                        </ui:Card.Footer>
+
+                        <Image
+
+                            Source="{Binding ImagePath}"
+                            Stretch="Fill" />
+                    </ui:Card>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+
+        <TextBlock
             Margin="10,10,0,0"
             HorizontalAlignment="Left"
             VerticalAlignment="Top"
             FontFamily="HarmonyOS Sans Black"
             FontSize="36"
-            Text="Hi,欢迎回来~"
-            TextWrapping="Wrap" />
-        <ui:TextBlock
-            x:Name="t2"
-            Grid.Column="1"
-            Margin="10,135,0,0"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Top"
-            FontFamily="HarmonyOS Sans Black"
-            FontSize="18"
-            Text="内存占用率:"
-            TextWrapping="Wrap" />
-        <ProgressBar
-            x:Name="p2"
-            Grid.Column="1"
-            Width="784"
-            Height="26"
-            Margin="6,177,0,0"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Top" />
-        <TextBlock x:Name="t1"
-            Grid.Column="1"
-            Width="218"
-            Height="22"
-            Margin="10,80,0,0"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Top"
-            FontFamily="HarmonyOS Sans Black"
-            FontSize="18"
-            RenderTransformOrigin="-0.254,0.197"
-            Text="今天是 "
+            Text="新闻"
             TextWrapping="Wrap" />
 
     </Grid>

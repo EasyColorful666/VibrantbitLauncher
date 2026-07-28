@@ -20,15 +20,19 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.9" />
-    <PackageReference Include="MinecraftLaunch" Version="4.0.6" />
-    <PackageReference Include="MinecraftLaunch.Base" Version="1.1.18" />
+    <PackageReference Include="MinecraftLaunch" Version="4.0.7" />
+    <PackageReference Include="MinecraftLaunch.Base" Version="1.1.19" />
+    <PackageReference Include="MinecraftLaunch.Skin" Version="1.0.1" />
     <PackageReference Include="MvvmLight" Version="5.4.1.1" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.9" />
     <PackageReference Include="System.Management" Version="10.0.9" />
     <PackageReference Include="WPF-UI" Version="4.3.0" />
     <PackageReference Include="WPF-UI.DependencyInjection" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Assets\Blank.jpg" />
+    <None Remove="Assets\gravatar.png" />
     <None Remove="Assets\icon.ico" />
     <None Remove="Assets\wpfui-icon-256.png" />
     <None Remove="Assets\wpfui-icon-1024.png" />
@@ -44,6 +48,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="Assets\Blank.jpg" />
+    <Resource Include="Assets\gravatar.png" />
+    <Resource Include="gravatar.png" />
     <Resource Include="icon.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>

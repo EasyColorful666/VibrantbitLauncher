@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
+using GalaSoft.MvvmLight.Messaging;
 
 namespace VibrantbitLauncher.ViewModels.Windows
 {
@@ -14,10 +15,16 @@ namespace VibrantbitLauncher.ViewModels.Windows
         static MainModel _mainModel = new();
         static public MainModel MainModel {  get { return _mainModel; } set { _mainModel = value; } } 
         private readonly INavigationService _navigationService;
+        private string imagePath;
 
+        public string ImagePath
+        {
+            get => imagePath;
+            set => Set(ref imagePath, value);
+        }
         public MainWindowViewModel(INavigationService navigationService)
         {
-
+            imagePath = @"\Assets\Blank.jpg"; // 设置默认图片路径
             _navigationService = navigationService;
 
             // 初始化命令
@@ -25,8 +32,14 @@ namespace VibrantbitLauncher.ViewModels.Windows
             OpenSettingsCommand = new RelayCommand(OpenSettings);
             ApplicationExitCommand = new RelayCommand(ApplicationExit);
 
+            Messenger.Default.Register<string>(this, "UpdateImagePath", UpdateImagePath);
             // 初始化菜单项
             InitializeMenuItems();
+        }
+
+        private void UpdateImagePath(string obj)
+        {
+            ImagePath = obj;
         }
 
         #region 属性

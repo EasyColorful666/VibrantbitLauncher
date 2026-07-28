@@ -1,4 +1,12 @@
-﻿using System.Diagnostics;
+﻿using Microsoft.Win32;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Media.Media3D;
+using VibrantbitLauncher.Helpers;
 using VibrantbitLauncher.ViewModels.Pages;
 using Wpf.Ui.Abstractions.Controls;
 
@@ -7,36 +15,18 @@ namespace VibrantbitLauncher.Views.Pages
     public partial class DashboardPage : System.Windows.Controls.Page
     {
 
-        
+
         public DashboardPage()
         {
             this.DataContext = new DashboardPageViewModel();
-
             InitializeComponent();
+            Loaded += DashboardPage_Loaded;
         }
 
-        private void Page_Loaded(object sender, RoutedEventArgs e)
+        private async void DashboardPage_Loaded(object sender, RoutedEventArgs e)
         {
-            Task.Run(() => {
-                App.Current.Dispatcher.Invoke(() =>
-                {
-                    t1.Text = $"今天是 {DateTime.Today.ToString("yyyy-MM-dd")}";
-                });
-            } );
-            Task.Run(() => {
-                while (true)
-                {
-                    var ramCounter = new PerformanceCounter("Memory", "% Committed Bytes In Use");
-                    App.Current.Dispatcher.Invoke(() =>
-                    {
-                        t2.Text = ($"内存占用率: {ramCounter.NextValue():F2}%");
-                        p2.Value = ramCounter.NextValue();
-                    });
-                    System.Threading.Thread.Sleep(500);
-                }
-            } );
-
-
+            var newsList = await MojangNewsHelper.GetNewsListAsync();
+            listbox1.ItemsSource = new ObservableCollection<NewsItem>(newsList);
         }
     }
 }

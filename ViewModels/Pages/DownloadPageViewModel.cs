@@ -14,6 +14,7 @@ using VibrantbitLauncher.Views.Windows;
 using VibrantbitLauncher.Views.Pages;
 using GalaSoft.MvvmLight.Messaging;
 using System.Windows;
+using System.Collections.ObjectModel;
 
 namespace VibrantbitLauncher.ViewModels.Pages
 {
@@ -23,8 +24,8 @@ namespace VibrantbitLauncher.ViewModels.Pages
         private string mcFolder;
 
 
-        List<McVersion> mcVersions = [];
-        public List<McVersion> McVersions
+        ObservableCollection<McVersion> mcVersions = [];
+        public ObservableCollection<McVersion> McVersions
         {
             get => mcVersions;
             set => Set(ref mcVersions, value);
