@@ -1,0 +1,88 @@
+<Window
+    x:Class="VibrantbitLauncher.Views.Windows.MicrosoftAuthWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:VibrantbitLauncher.Views.Windows"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="微软账户验证"
+    Width="420"
+    Height="280"
+    WindowStartupLocation="CenterOwner"
+    ResizeMode="NoResize"
+    mc:Ignorable="d">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- 标题 -->
+        <TextBlock
+            Grid.Row="0"
+            FontSize="18"
+            FontWeight="Bold"
+            Text="微软账户登录验证" />
+
+        <!-- 说明 -->
+        <TextBlock
+            Grid.Row="1"
+            Margin="0,12,0,0"
+            FontSize="13"
+            Foreground="Gray"
+            TextWrapping="Wrap">
+            请在浏览器中打开验证页面，输入以下一次性代码完成登录。代码已自动复制到剪贴板。
+        </TextBlock>
+
+        <!-- 一次性代码 -->
+        <Border
+            Grid.Row="2"
+            Margin="0,16,0,0"
+            Padding="16,12"
+            Background="#FFF5F5F5"
+            CornerRadius="6">
+            <TextBlock
+                x:Name="CodeText"
+                HorizontalAlignment="Center"
+                FontSize="28"
+                FontWeight="Bold"
+                Text="------" />
+        </Border>
+
+        <!-- 提示 -->
+        <TextBlock
+            Grid.Row="3"
+            Margin="0,12,0,0"
+            FontSize="12"
+            Foreground="#FF0078D4"
+            Text="代码已复制到剪贴板，点击下方按钮打开浏览器"
+            TextWrapping="Wrap" />
+
+        <!-- 按钮 -->
+        <StackPanel
+            Grid.Row="4"
+            Margin="0,16,0,0"
+            Orientation="Horizontal"
+            HorizontalAlignment="Right">
+            <Button
+                x:Name="CancelButton"
+                Width="90"
+                Height="32"
+                Margin="0,0,10,0"
+                Click="CancelButton_Click"
+                Content="取消" />
+            <Button
+                x:Name="OpenBrowserButton"
+                Width="120"
+                Height="32"
+                Background="#FF0078D4"
+                Foreground="White"
+                Click="OpenBrowserButton_Click"
+                Content="打开浏览器" />
+        </StackPanel>
+    </Grid>
+</Window>

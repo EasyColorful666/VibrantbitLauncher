@@ -1,8 +1,9 @@
+using MinecraftLaunch.Base.Models.Authentication;
+using MinecraftLaunch.Base.Models.Authentication.Yggdrasil;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows.Media;
@@ -11,45 +12,19 @@ using Wpf.Ui.Appearance;
 
 namespace VibrantbitLauncher.Services
 {
-    /// <summary>微软账户保存数据。</summary>
-    public class MicrosoftAccountData
-    {
-        public string Name { get; set; } = string.Empty;
-        public string Uuid { get; set; } = string.Empty;
-        public string AccessToken { get; set; } = string.Empty;
-        public string RefreshToken { get; set; } = string.Empty;
-        public DateTime LastRefreshTime { get; set; }
-    }
-
-    /// <summary>外置（Yggdrasil）账户保存数据。</summary>
-    public class YggdrasilAccountData
-    {
-        public string Name { get; set; } = string.Empty;
-        public string Uuid { get; set; } = string.Empty;
-        public string AccessToken { get; set; } = string.Empty;
-        public string ClientToken { get; set; } = string.Empty;
-        public string YggdrasilServerUrl { get; set; } = string.Empty;
-    }
-
-    /// <summary>离线账户保存数据。</summary>
-    public class OfflineAccountData
-    {
-        public string Name { get; set; } = string.Empty;
-        public string Uuid { get; set; } = string.Empty;
-    }
-
     /// <summary>
     /// 应用程序设置数据模型，序列化为 JSON 配置文件。
+    /// 账户直接使用 MinecraftLaunch 的类型，不做二次封装。
     /// </summary>
     public class AppSettings
     {
         public string Theme { get; set; } = "Light";
-        public string AccentColor { get; set; } = "System";
+        public string AccentColor { get; set; } = "#FF0078D4";
         public string MinecraftFolder { get; set; } = "./.minecraft";
         public string JavaPath { get; set; } = string.Empty;
-        public List<MicrosoftAccountData> MicrosoftAccounts { get; set; } = new();
-        public List<YggdrasilAccountData> YggdrasilAccounts { get; set; } = new();
-        public List<OfflineAccountData> OfflineAccounts { get; set; } = new();
+        public List<MicrosoftAccount> MicrosoftAccounts { get; set; } = new();
+        public List<YggdrasilAccount> YggdrasilAccounts { get; set; } = new();
+        public List<OfflineAccount> OfflineAccounts { get; set; } = new();
         public string SelectedAccountUuid { get; set; } = string.Empty;
     }
 
@@ -64,7 +39,9 @@ namespace VibrantbitLauncher.Services
         private static readonly JsonSerializerOptions JsonOptions = new()
         {
             WriteIndented = true,
-            Converters = { new JsonStringEnumConverter() }
+            Converters = { new JsonStringEnumConverter() },
+            ReferenceHandler = ReferenceHandler.IgnoreCycles,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
         public static AppSettings Current { get; private set; } = new();
@@ -98,50 +75,41 @@ namespace VibrantbitLauncher.Services
                 var json = JsonSerializer.Serialize(Current, JsonOptions);
                 File.WriteAllText(ConfigPath, json);
             }
-            catch
+            catch (Exception ex)
             {
-                // 保存失败静默处理
+                System.Diagnostics.Debug.WriteLine($"[SettingsService.Save] 保存失败: {ex}");
             }
         }
 
-        // ===== 账户保存 =====
+        // ===== 账户保存（直接使用 MinecraftLaunch 类型） =====
 
         /// <summary>保存微软账户。</summary>
-        public static void SaveMicrosoftAccount(object account)
+        public static void SaveMicrosoftAccount(MicrosoftAccount account)
         {
-            var data = ExtractProperties<MicrosoftAccountData>(account);
-            if (string.IsNullOrEmpty(data.Uuid)) return;
-
-            var existing = Current.MicrosoftAccounts.FirstOrDefault(a => a.Uuid == data.Uuid);
+            var existing = Current.MicrosoftAccounts.FirstOrDefault(a => a.Uuid == account.Uuid);
             if (existing != null)
                 Current.MicrosoftAccounts.Remove(existing);
-            Current.MicrosoftAccounts.Add(data);
+            Current.MicrosoftAccounts.Add(account);
             Save();
         }
 
         /// <summary>保存外置（Yggdrasil）账户。</summary>
-        public static void SaveYggdrasilAccount(object account)
+        public static void SaveYggdrasilAccount(YggdrasilAccount account)
         {
-            var data = ExtractProperties<YggdrasilAccountData>(account);
-            if (string.IsNullOrEmpty(data.Uuid)) return;
-
-            var existing = Current.YggdrasilAccounts.FirstOrDefault(a => a.Uuid == data.Uuid);
+            var existing = Current.YggdrasilAccounts.FirstOrDefault(a => a.Uuid == account.Uuid);
             if (existing != null)
                 Current.YggdrasilAccounts.Remove(existing);
-            Current.YggdrasilAccounts.Add(data);
+            Current.YggdrasilAccounts.Add(account);
             Save();
         }
 
         /// <summary>保存离线账户。</summary>
-        public static void SaveOfflineAccount(object account)
+        public static void SaveOfflineAccount(OfflineAccount account)
         {
-            var data = ExtractProperties<OfflineAccountData>(account);
-            if (string.IsNullOrEmpty(data.Name)) return;
-
-            var existing = Current.OfflineAccounts.FirstOrDefault(a => a.Name == data.Name);
+            var existing = Current.OfflineAccounts.FirstOrDefault(a => a.Name == account.Name);
             if (existing != null)
                 Current.OfflineAccounts.Remove(existing);
-            Current.OfflineAccounts.Add(data);
+            Current.OfflineAccounts.Add(account);
             Save();
         }
 
@@ -152,36 +120,50 @@ namespace VibrantbitLauncher.Services
             Save();
         }
 
-        /// <summary>
-        /// 用反射从账户对象提取属性，填充到目标数据类型。
-        /// </summary>
-        private static T ExtractProperties<T>(object account) where T : new()
+        // ===== 账户删除 =====
+
+        /// <summary>删除微软账户。</summary>
+        public static void RemoveMicrosoftAccount(Guid uuid)
         {
-            var data = new T();
-            var dataType = typeof(T);
-            var accountType = account.GetType();
+            var existing = Current.MicrosoftAccounts.FirstOrDefault(a => a.Uuid == uuid);
+            if (existing != null)
+                Current.MicrosoftAccounts.Remove(existing);
+            Save();
+        }
 
-            foreach (var prop in dataType.GetProperties())
+        /// <summary>删除外置（Yggdrasil）账户。</summary>
+        public static void RemoveYggdrasilAccount(Guid uuid)
+        {
+            var existing = Current.YggdrasilAccounts.FirstOrDefault(a => a.Uuid == uuid);
+            if (existing != null)
+                Current.YggdrasilAccounts.Remove(existing);
+            Save();
+        }
+
+        /// <summary>删除离线账户。</summary>
+        public static void RemoveOfflineAccount(string name)
+        {
+            var existing = Current.OfflineAccounts.FirstOrDefault(a => a.Name == name);
+            if (existing != null)
+                Current.OfflineAccounts.Remove(existing);
+            Save();
+        }
+
+        /// <summary>根据账户类型自动删除。</summary>
+        public static void RemoveAccount(Account account)
+        {
+            switch (account)
             {
-                var sourceProp = accountType.GetProperty(prop.Name,
-                    BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-                if (sourceProp == null || !sourceProp.CanRead) continue;
-
-                try
-                {
-                    var value = sourceProp.GetValue(account);
-                    if (value == null) continue;
-
-                    if (prop.PropertyType == typeof(string))
-                        prop.SetValue(data, value.ToString());
-                    else if (prop.PropertyType == typeof(DateTime))
-                        prop.SetValue(data, Convert.ToDateTime(value));
-                    else
-                        prop.SetValue(data, value);
-                }
-                catch { /* 忽略单个属性提取失败 */ }
+                case MicrosoftAccount ms:
+                    RemoveMicrosoftAccount(ms.Uuid);
+                    break;
+                case YggdrasilAccount yg:
+                    RemoveYggdrasilAccount(yg.Uuid);
+                    break;
+                case OfflineAccount off:
+                    RemoveOfflineAccount(off.Name);
+                    break;
             }
-            return data;
         }
 
         // ===== 主题 =====
@@ -194,18 +176,13 @@ namespace VibrantbitLauncher.Services
 
             ApplicationThemeManager.Apply(theme);
 
-            if (Current.AccentColor.Equals("System", StringComparison.OrdinalIgnoreCase))
-            {
-                ApplicationAccentColorManager.ApplySystemAccent();
-            }
-            else if (TryParseColor(Current.AccentColor, out var color))
-            {
-                Application.Current.Resources["SystemAccentColor"] = color;
-                Application.Current.Resources["SystemAccentColorPrimary"] = color;
-                Application.Current.Resources["SystemAccentColorSecondary"] = color;
-                Application.Current.Resources["SystemAccentColorTertiary"] = color;
-                ApplicationAccentColorManager.Apply(color, theme, false);
-            }
+            // 统一使用蓝色主题色，不跟随系统
+            var blue = (Color)ColorConverter.ConvertFromString("#FF0078D4");
+            Application.Current.Resources["SystemAccentColor"] = blue;
+            Application.Current.Resources["SystemAccentColorPrimary"] = blue;
+            Application.Current.Resources["SystemAccentColorSecondary"] = blue;
+            Application.Current.Resources["SystemAccentColorTertiary"] = blue;
+            ApplicationAccentColorManager.Apply(blue, theme, false);
         }
 
         public static bool TryParseColor(string value, out Color color)

@@ -1,20 +1,20 @@
-using Flurl.Util;
 using GalaSoft.MvvmLight;
+using GalaSoft.MvvmLight.CommandWpf;
 using GalaSoft.MvvmLight.Messaging;
 using MinecraftLaunch.Base.Models.Authentication;
 using MinecraftLaunch.Base.Models.Authentication.Yggdrasil;
 using MinecraftLaunch.Components.Authenticator;
 using MinecraftLaunch.Components.Provider;
 using SixLabors.ImageSharp;
+using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Security.Principal;
-using System.Text.RegularExpressions;
-using System.Windows.Media;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
 using VibrantbitLauncher.Models;
 using VibrantbitLauncher.Services;
 using VibrantbitLauncher.ViewModels.Windows;
@@ -22,7 +22,8 @@ using VibrantbitLauncher.Views.Windows;
 using Wpf.Ui;
 using Wpf.Ui.Abstractions.Controls;
 using Wpf.Ui.Controls;
-using Wpf.Ui.Extensions;
+using UiMessageBox = Wpf.Ui.Controls.MessageBox;
+
 namespace VibrantbitLauncher.ViewModels.Pages
 {
     public partial class AccountPageViewModel : ViewModelBase
@@ -55,7 +56,6 @@ namespace VibrantbitLauncher.ViewModels.Pages
             AuthenticateOfflineCommand = new RelayCommand(AuthenticateOffline);
             LoadCommand = new RelayCommand<SnackbarPresenter>(Load);
         }
-        
 
         private void NewOfflineAccountProfile(string name)
         {
@@ -78,50 +78,30 @@ namespace VibrantbitLauncher.ViewModels.Pages
         }
 
         /// <summary>
-        /// 从配置文件恢复已保存的账户，按类型分别重建。
+        /// 从配置文件恢复已保存的账户，直接使用 MinecraftLaunch 的账户类型。
         /// </summary>
         private void RestoreSavedAccounts()
         {
-            // 离线账户
+            // 离线账户：直接使用保存的 OfflineAccount 对象
             foreach (var saved in SettingsService.Current.OfflineAccounts)
             {
                 if (string.IsNullOrEmpty(saved.Name)) continue;
-                var account = new OfflineAuthenticator().Authenticate(saved.Name);
-                AddAccountToList(account, "Offline", "/Assets/gravatar.png");
-                AutoSelectIfSaved(account, saved.Uuid);
+                AddAccountToList(saved, "Offline", "/Assets/gravatar.png");
+                AutoSelectIfSaved(saved, saved.Uuid.ToString());
             }
 
-            // 微软账户：用保存的 token 重建
+            // 微软账户：直接使用保存的 MicrosoftAccount 对象
             foreach (var saved in SettingsService.Current.MicrosoftAccounts)
             {
-                var account = TryCreateMicrosoftAccount(saved);
-                if (account != null)
-                {
-                    AddAccountToList(account, "Microsoft", ".\\res\\skin.png");
-                    AutoSelectIfSaved(account, saved.Uuid);
-                }
-                else
-                {
-                    // 重建失败，用离线方式占位
-                    var fallback = new OfflineAuthenticator().Authenticate(saved.Name);
-                    AddAccountToList(fallback, "Microsoft", "/Assets/gravatar.png");
-                }
+                AddAccountToList(saved, "Microsoft", ".\\res\\skin.png");
+                AutoSelectIfSaved(saved, saved.Uuid.ToString());
             }
 
-            // Yggdrasil 账户：用保存的 token 重建
+            // Yggdrasil 账户：直接使用保存的 YggdrasilAccount 对象
             foreach (var saved in SettingsService.Current.YggdrasilAccounts)
             {
-                var account = TryCreateYggdrasilAccount(saved);
-                if (account != null)
-                {
-                    AddAccountToList(account, "Yggdrasil", ".\\res\\skin.png");
-                    AutoSelectIfSaved(account, saved.Uuid);
-                }
-                else
-                {
-                    var fallback = new OfflineAuthenticator().Authenticate(saved.Name);
-                    AddAccountToList(fallback, "Yggdrasil", "/Assets/gravatar.png");
-                }
+                AddAccountToList(saved, "Yggdrasil", ".\\res\\skin.png");
+                AutoSelectIfSaved(saved, saved.Uuid.ToString());
             }
         }
 
@@ -135,6 +115,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
                 Account = account,
                 AccountType = type,
                 SelectedCommand = new RelayCommand<Account>(Selected),
+                DeleteCommand = new RelayCommand<Account>(DeleteAccount),
                 ImagePath = imagePath
             });
         }
@@ -149,78 +130,17 @@ namespace VibrantbitLauncher.ViewModels.Pages
         }
 
         /// <summary>
-        /// 尝试用保存的数据创建微软账户。
-        /// </summary>
-        private static Account? TryCreateMicrosoftAccount(MicrosoftAccountData data)
-        {
-            try
-            {
-                var asm = Assembly.Load("MinecraftLaunch");
-                var type = asm.GetType("MinecraftLaunch.Base.Models.Authentication.MicrosoftAccount");
-                if (type == null) return null;
-
-                var instance = Activator.CreateInstance(type);
-                SetProperty(instance, "Name", data.Name);
-                SetProperty(instance, "Uuid", data.Uuid);
-                SetProperty(instance, "AccessToken", data.AccessToken);
-                SetProperty(instance, "RefreshToken", data.RefreshToken);
-                SetProperty(instance, "LastRefreshTime", data.LastRefreshTime);
-                return instance as Account;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// 尝试用保存的数据创建 Yggdrasil 账户。
-        /// </summary>
-        private static Account? TryCreateYggdrasilAccount(YggdrasilAccountData data)
-        {
-            try
-            {
-                var asm = Assembly.Load("MinecraftLaunch");
-                var type = asm.GetType("MinecraftLaunch.Base.Models.Authentication.Yggdrasil.YggdrasilAccount");
-                if (type == null) return null;
-
-                var instance = Activator.CreateInstance(type);
-                SetProperty(instance, "Name", data.Name);
-                SetProperty(instance, "Uuid", data.Uuid);
-                SetProperty(instance, "AccessToken", data.AccessToken);
-                SetProperty(instance, "ClientToken", data.ClientToken);
-                SetProperty(instance, "YggdrasilServerUrl", data.YggdrasilServerUrl);
-                return instance as Account;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        private static void SetProperty(object obj, string name, object value)
-        {
-            var prop = obj.GetType().GetProperty(name,
-                BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-            if (prop != null && prop.CanWrite)
-                prop.SetValue(obj, value);
-        }
-
-        /// <summary>
-        /// 获取账户的 Uuid（反射兼容各类型）。
+        /// 获取账户的 Uuid，兼容各账户类型。
         /// </summary>
         private static string GetAccountUuid(Account account)
         {
-            try
+            return account switch
             {
-                var prop = account.GetType().GetProperty("Uuid",
-                    BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-                return prop?.GetValue(account)?.ToString() ?? account.Name;
-            }
-            catch
-            {
-                return account.Name;
-            }
+                MicrosoftAccount ms => ms.Uuid.ToString(),
+                YggdrasilAccount yg => yg.Uuid.ToString(),
+                OfflineAccount off => off.Uuid.ToString(),
+                _ => account.Name
+            };
         }
 
         [DllImport("User32")]
@@ -241,49 +161,77 @@ namespace VibrantbitLauncher.ViewModels.Pages
         [DllImport("User32", CharSet = CharSet.Unicode)]
         public static extern IntPtr SetClipboardData(int uFormat, IntPtr hMem);
         public static void SetText(string text)
-{
-    if (!OpenClipboard(IntPtr.Zero))
-    {
-        SetText(text);
-        return;
-    }
-    EmptyClipboard();
-    SetClipboardData(13, Marshal.StringToHGlobalUni(text));
-    CloseClipboard();
-}
+        {
+            if (!OpenClipboard(IntPtr.Zero))
+            {
+                SetText(text);
+                return;
+            }
+            EmptyClipboard();
+            SetClipboardData(13, Marshal.StringToHGlobalUni(text));
+            CloseClipboard();
+        }
+
         private async void AuthenticateMicrosoftAsync()
         {
-
             MicrosoftAuthenticator authenticator = new("f4c1c237-e68f-4866-a998-82f0db041c55");
-            var oAuth2Token = await authenticator.DeviceFlowAuthAsync(dc =>
+            var authWindow = new MicrosoftAuthWindow
             {
-                snackbarService.Show("提示","设备代码: " + dc.UserCode + " 设备代码已写入剪贴板",ControlAppearance.Info,null,TimeSpan.MaxValue);
-                string textToCopy = dc.UserCode;
-                SetText(textToCopy);
-                Process.Start(new ProcessStartInfo { UseShellExecute = true, FileName = dc.VerificationUrl });
-            });
+                Owner = Application.Current.MainWindow
+            };
 
-            var userProfile = await authenticator.AuthenticateAsync(oAuth2Token);
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-            await using var skinStream = await SkinProvider.GetMicrosoftSkinDataAsync(userProfile, cts.Token);
-
-            using var ms = new MemoryStream();
-            await skinStream.CopyToAsync(ms, cts.Token);
-            var skinBytes = ms.ToArray();
-            var skin = new MinecraftLaunch.Skin.SkinResolver(skinBytes);
-            if(!Directory.Exists(".\\res"))  
-                skin.CropSkinHeadBitmap().SaveAsPng(".\\res\\skin.png");
-            else
+            try
             {
-                Directory.CreateDirectory(".\\res");
+                // 后台执行 DeviceFlow 认证
+                var authTask = Task.Run(async () =>
+                {
+                    var token = await authenticator.DeviceFlowAuthAsync(dc =>
+                    {
+                        App.Current.Dispatcher.Invoke(() => authWindow.SetCode(dc.UserCode, dc.VerificationUrl));
+                    });
+                    App.Current.Dispatcher.Invoke(() => authWindow.Close());
+                    return token;
+                });
+
+                authWindow.ShowDialog();
+
+                if (authWindow.IsCancelled)
+                    return;
+
+                var oAuth2Token = await authTask;
+
+                var userProfile = await authenticator.AuthenticateAsync(oAuth2Token);
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                await using var skinStream = await SkinProvider.GetMicrosoftSkinDataAsync(userProfile, cts.Token);
+
+                using var ms = new MemoryStream();
+                await skinStream.CopyToAsync(ms, cts.Token);
+                var skinBytes = ms.ToArray();
+                var skin = new MinecraftLaunch.Skin.SkinResolver(skinBytes);
+                if (Directory.Exists(".\\res"))
+                    skin.CropSkinHeadBitmap().SaveAsPng(".\\res\\skin.png");
+                else
+                {
+                    Directory.CreateDirectory(".\\res");
+                    skin.CropSkinHeadBitmap().SaveAsPng(".\\res\\skin.png");
+                }
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    userNames.Add(userProfile.Name);
+                    accounts.Add(userProfile);
+                    users.Add(new User { Name = userProfile.Name, Account = userProfile, AccountType = "Microsoft", SelectedCommand = new RelayCommand<Account>(Selected), DeleteCommand = new RelayCommand<Account>(DeleteAccount), ImagePath = ".\\res\\skin.png" });
+                    SettingsService.SaveMicrosoftAccount(userProfile);
+                });
             }
-            App.Current.Dispatcher.Invoke(() =>
-            { 
-                userNames.Add(userProfile.Name);
-                accounts.Add(userProfile);
-                users.Add(new User { Name = userProfile.Name, Account = userProfile, AccountType = "Microsoft", SelectedCommand = new RelayCommand<Account>(Selected) , ImagePath = ".\\res\\skin.png" });
-                SettingsService.SaveMicrosoftAccount(userProfile);
-            });
+            catch (TaskCanceledException)
+            {
+                authWindow.Close();
+            }
+            catch (Exception ex)
+            {
+                authWindow.Close();
+                await new UiMessageBox { Title = "错误", Content = $"微软登录失败：{ex.Message}" }.ShowDialogAsync();
+            }
         }
 
         private async void AuthenticateYggdrasilAsync()
@@ -296,8 +244,10 @@ namespace VibrantbitLauncher.ViewModels.Pages
                 {
                     YggdrasilAuthenticator authenticator = new(yggdrasilAccountProfile.Server, yggdrasilAccountProfile.Email, yggdrasilAccountProfile.Password);
                     var userProfile = await authenticator.AuthenticateAsync();
+                    var account = userProfile.First() as YggdrasilAccount;
+
                     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-                    await using var skinStream = await SkinProvider.GetYggdrasilSkinDataAsync(userProfile.First() as YggdrasilAccount, cts.Token);
+                    await using var skinStream = await SkinProvider.GetYggdrasilSkinDataAsync(account, cts.Token);
 
                     using var ms = new MemoryStream();
                     await skinStream.CopyToAsync(ms, cts.Token);
@@ -311,35 +261,35 @@ namespace VibrantbitLauncher.ViewModels.Pages
                     }
                     App.Current.Dispatcher.Invoke(() =>
                     {
-                        userNames.Add(userProfile.First().Name);
-                        accounts.Add(userProfile.First() as YggdrasilAccount);
-                        users.Add(new User { Name = userProfile.First().Name, Account = userProfile.First(), AccountType = "Yggdrasil", SelectedCommand = new RelayCommand<Account>(Selected) ,ImagePath= ".\\res\\skin.png" });
-                        SettingsService.SaveYggdrasilAccount(userProfile.First());
+                        userNames.Add(account.Name);
+                        accounts.Add(account);
+                        users.Add(new User { Name = account.Name, Account = account, AccountType = "Yggdrasil", SelectedCommand = new RelayCommand<Account>(Selected), DeleteCommand = new RelayCommand<Account>(DeleteAccount), ImagePath = ".\\res\\skin.png" });
+                        SettingsService.SaveYggdrasilAccount(account);
                     });
                 }
             }
             catch (Exception ex)
             {
-                snackbarService.Show("错误", $"用户登录失败" + "\n" + $"{ex.Message}", ControlAppearance.Danger);
+                snackbarService.Show("错误", $"用户登录失败" + "\n" + $"{ex.Message}", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
             }
         }
 
         private void AuthenticateOffline()
         {
-                OfflineAuthenticatorWindow window = new();
-                window.ShowDialog();
-                OfflineAuthenticator authenticator = new();
-                if (!string.IsNullOrEmpty(offlineAccountName))
+            OfflineAuthenticatorWindow window = new();
+            window.ShowDialog();
+            OfflineAuthenticator authenticator = new();
+            if (!string.IsNullOrEmpty(offlineAccountName))
+            {
+                var userprofile = authenticator.Authenticate(offlineAccountName);
+                App.Current.Dispatcher.Invoke(() =>
                 {
-                    var userprofile = authenticator.Authenticate(offlineAccountName);
-                    App.Current.Dispatcher.Invoke(() =>
-                    {
-                        userNames.Add(userprofile.Name);
-                        accounts.Add(userprofile);
-                        users.Add(new User { Name = offlineAccountName, Account = userprofile, AccountType = "Offline", SelectedCommand = new RelayCommand<Account>(Selected) });
-                        SettingsService.SaveOfflineAccount(userprofile);
-                    });
-                    snackbarService.Show("提示", $"离线用户{offlineAccountName}已创建", ControlAppearance.Info, null, snackbarService.DefaultTimeOut);
+                    userNames.Add(userprofile.Name);
+                    accounts.Add(userprofile);
+                    users.Add(new User { Name = offlineAccountName, Account = userprofile, AccountType = "Offline", SelectedCommand = new RelayCommand<Account>(Selected), DeleteCommand = new RelayCommand<Account>(DeleteAccount) });
+                    SettingsService.SaveOfflineAccount(userprofile);
+                });
+                snackbarService.Show("提示", $"离线用户{offlineAccountName}已创建", ControlAppearance.Info, null, snackbarService.DefaultTimeOut);
             }
         }
 
@@ -349,6 +299,30 @@ namespace VibrantbitLauncher.ViewModels.Pages
             MainWindowViewModel.MainModel.Account = account;
             SettingsService.SetSelectedAccount(GetAccountUuid(account));
         }
+
+        /// <summary>
+        /// 删除账户：从列表和配置文件中移除。
+        /// </summary>
+        void DeleteAccount(Account account)
+        {
+            // 从 UI 列表移除
+            var user = users.FirstOrDefault(u => u.Account == account);
+            if (user != null)
+                users.Remove(user);
+            accounts.Remove(account);
+            userNames.Remove(account.Name);
+
+            // 从配置文件移除（统一使用 SettingsService 的删除方法）
+            SettingsService.RemoveAccount(account);
+
+            // 如果删除的是当前选中账户，清空选中状态
+            if (selectedAccount == account)
+            {
+                selectedAccount = null;
+                MainWindowViewModel.MainModel.Account = null;
+                SettingsService.SetSelectedAccount(string.Empty);
+            }
+        }
     }
 
     public class User
@@ -357,6 +331,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
         public Account Account { get; set; }
         public string AccountType { get; set; }
         public RelayCommand<Account> SelectedCommand { get; set; }
+        public RelayCommand<Account> DeleteCommand { get; set; }
         public string ImagePath { get; set; } = @"/Assets/gravatar.png";
     }
 

@@ -1,4 +1,4 @@
-﻿using MinecraftLaunch.Base.Models.Network;
+using MinecraftLaunch.Base.Models.Network;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -37,7 +37,7 @@ namespace VibrantbitLauncher.Views.Pages
             InitializeComponent();
             this.DataContext = viewModel;
 
-            // 预先创建空的 CollectionView 并绑定到 ListBox，这样 UI 能尽快响应并显示占位（虚拟化生效）
+            // 预先创建空的 CollectionView 并绑定到 ListBox
             versionView = new ListCollectionView(viewModel.McVersions);
             versionView.Filter = VersionFilter;
             listBox.ItemsSource = versionView;
@@ -51,67 +51,60 @@ namespace VibrantbitLauncher.Views.Pages
                 versionView.Refresh();
             };
 
-            // 页面加载时开始增量加载数据（后台线程），不阻塞 UI
+            // 页面加载时开始异步加载数据，不阻塞 UI
             this.Loaded += (s, e) =>
             {
                 snackbarService.SetSnackbarPresenter(SnackbarPresenter);
                 if (!viewModel.IsLoaded)
                 {
-                    _ = LoadMcVersionsAsyncIncremental();
+                    _ = LoadMcVersionsAsync();
                     viewModel.IsLoaded = true;
                 }
             };
         }
 
-        private async Task LoadMcVersionsAsyncIncremental()
+        /// <summary>
+        /// 异步加载 Minecraft 版本列表：后台线程获取数据，批量推回 UI，最后只刷新一次。
+        /// </summary>
+        private async Task LoadMcVersionsAsync()
         {
-            // 增量加载实现：在后台线程执行可能的网络/IO 操作，并按批次将数据推回 UI，减少一次性分配带来的短时卡顿。
             viewModel.McVersions.Clear();
-            const int batchSize = 50;
+            const int batchSize = 100;
+
             try
             {
-                await Task.Run(async () =>
+                // 后台线程获取所有版本数据
+                var allVersions = await Task.Run(async () =>
                 {
                     var entries = await VanillaInstaller.EnumerableMinecraftAsync();
-                    var batch = new List<McVersion>(batchSize);
-                    foreach (var entry in entries)
+                    return entries.Select(entry => new McVersion
                     {
-                        batch.Add(new McVersion
-                        {
-                            Version = entry.McVersion,
-                            Date = entry.ReleaseTime.ToString("yyyy-MM-dd")
-                        });
-
-                        if (batch.Count >= batchSize)
-                        {
-                            var toAdd = batch.ToArray();
-                            batch.Clear();
-                            // 使用 Dispatcher 将一批数据一次性添加到 UI 集合，减少 UI 线程切换次数。
-                            App.Current.Dispatcher.Invoke(() =>
-                            {
-                                foreach (var v in toAdd) viewModel.McVersions.Add(v);
-                                // 刷新过滤视图以便立即显示新增项（如果需要）
-                                versionView.Refresh();
-                            });
-                            // 给调度器一些时间处理 UI 操作，避免长时间占用后台线程
-                            await Task.Delay(10);
-                        }
-                    }
-
-                    if (batch.Count > 0)
-                    {
-                        var toAdd = batch.ToArray();
-                        App.Current.Dispatcher.Invoke(() =>
-                        {
-                            foreach (var v in toAdd) viewModel.McVersions.Add(v);
-                            versionView.Refresh();
-                        });
-                    }
+                        Version = entry.McVersion,
+                        Date = entry.ReleaseTime.ToString("yyyy-MM-dd")
+                    }).ToList();
                 });
+
+                // 分批添加到 UI 集合，用 InvokeAsync 异步调度，不阻塞后台线程
+                for (int i = 0; i < allVersions.Count; i += batchSize)
+                {
+                    var batch = allVersions.Skip(i).Take(batchSize).ToArray();
+                    await App.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        foreach (var v in batch)
+                            viewModel.McVersions.Add(v);
+                    }, DispatcherPriority.Background);
+                }
+
+                // 全部添加完成后只刷新一次过滤视图
+                await App.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    versionView.Refresh();
+                }, DispatcherPriority.Background);
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => snackbarService.Show("错误", ex.Message, Wpf.Ui.Controls.ControlAppearance.Danger, null, snackbarService.DefaultTimeOut));
+                await App.Current.Dispatcher.InvokeAsync(() =>
+                    snackbarService.Show("错误", ex.Message, Wpf.Ui.Controls.ControlAppearance.Danger, null, snackbarService.DefaultTimeOut));
             }
         }
 

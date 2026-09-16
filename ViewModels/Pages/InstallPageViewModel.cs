@@ -136,21 +136,18 @@ namespace VibrantbitLauncher.ViewModels.Pages
                 OptfineVersions = new List<string>();
                 QuiltVersions = new List<string>();
 
-                // 获取可用版本列表
-                var vanillas = await VanillaInstaller.EnumerableMinecraftAsync();
-                // 可选：校验 mcVersion 在 vanillas 中存在
+                // 并行加载所有加载器版本，减少总等待时间
+                var forgeTask = Task.Run(async () => (await ForgeInstaller.EnumerableForgeAsync(mcVersion)).Select(x => x.DisplayVersion).ToList());
+                var fabricTask = Task.Run(async () => (await FabricInstaller.EnumerableFabricAsync(mcVersion)).Select(x => x.DisplayVersion).ToList());
+                var optifineTask = Task.Run(async () => (await OptifineInstaller.EnumerableOptifineAsync(mcVersion)).Select(x => x.DisplayVersion).ToList());
+                var quiltTask = Task.Run(async () => (await QuiltInstaller.EnumerableQuiltAsync(mcVersion)).Select(x => x.DisplayVersion).ToList());
 
-                var forges = await ForgeInstaller.EnumerableForgeAsync(mcVersion);
-                ForgeVersions = forges.Select(x => x.DisplayVersion).ToList();
+                await Task.WhenAll(forgeTask, fabricTask, optifineTask, quiltTask);
 
-                var fabrics = await FabricInstaller.EnumerableFabricAsync(mcVersion);
-                FabricVersions = fabrics.Select(x => x.DisplayVersion).ToList();
-
-                var optfines = await OptifineInstaller.EnumerableOptifineAsync(mcVersion);
-                OptfineVersions = optfines.Select(x => x.DisplayVersion).ToList();
-
-                var quilts = await QuiltInstaller.EnumerableQuiltAsync(mcVersion);
-                QuiltVersions = quilts.Select(x => x.DisplayVersion).ToList();
+                ForgeVersions = forgeTask.Result;
+                FabricVersions = fabricTask.Result;
+                OptfineVersions = optifineTask.Result;
+                QuiltVersions = quiltTask.Result;
             }
             catch (Exception ex)
             {
@@ -164,7 +161,10 @@ namespace VibrantbitLauncher.ViewModels.Pages
 
         public async Task InstallAsync()
         {
-            List<JavaEntry> asyncJavas = [.. JavaUtil.EnumerableJavaAsync().ToBlockingEnumerable().ToList()];
+            // 异步枚举 Java，不阻塞 UI 线程
+            var javaList = await JavaUtil.EnumerableJavaAsync().ToListAsync();
+            var asyncJavas = javaList.ToList();
+
             IsLoading = true;
             string CustomId = "";
             var installEntries = new List<IInstallEntry>();
@@ -244,11 +244,11 @@ namespace VibrantbitLauncher.ViewModels.Pages
 
             snackbarService.Show("提示", $"正在安装版本{McVersion},Forge:{SelectForgeVersion},Fabric:{SelectFabricVersion},Optifine{SelectOptifineVersion},Quilt:{SelectQuiltVersion}", ControlAppearance.Info, null, snackbarService.DefaultTimeOut);
 
-            var installer = CompositeInstaller.Create(installEntries, mcFolder, javaPath: asyncJavas.FirstOrDefault().JavaPath,customId: CustomId);
+            var installer = CompositeInstaller.Create(installEntries, mcFolder, javaPath: asyncJavas.FirstOrDefault().JavaPath, customId: CustomId);
             installer.ProgressChanged += (_, arg) =>
             {
                 InstallStep = $"{arg.FinishedStepTaskCount}/{arg.TotalStepTaskCount} ";
-                InstallProgress = (int)(arg.Progress*100);
+                InstallProgress = (int)(arg.Progress * 100);
                 Speed = (arg.IsStepSupportSpeed ? $"{arg.Speed / 1024 / 1024}" : "N/A");
             };
 

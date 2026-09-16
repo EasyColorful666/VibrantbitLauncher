@@ -145,7 +145,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
                 {
                     javaPath = selectedMinecraftEntry.GetAppropriateJava(asyncJavas);
                 }
-                catch (InvalidOperationException)
+                catch (Exception)
                 {
                     snackbarService.Show("错误", "未找到匹配的 Java 版本，请安装 Java 或刷新 Java 列表", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
                     return;
@@ -159,8 +159,10 @@ namespace VibrantbitLauncher.ViewModels.Pages
                     JavaPath = javaPath,
                 }, minecraftParser);
 
-                    snackbarService.Show($"正在启动 {selectedMinecraftEntry.Id}，请稍等...", "提示", ControlAppearance.Info, null, snackbarService.DefaultTimeOut);
-                    var process = await runner.RunAsync(selectedMinecraftEntry.Id);
+                try
+                {
+                    snackbarService.Show($"正在启动 {McVersion}，请稍等...", "提示", ControlAppearance.Info, null, snackbarService.DefaultTimeOut);
+                    var process = await runner.RunAsync(McVersion);
                     process.Started += (_, _) =>
                     {
                         App.Current.Dispatcher.Invoke(() =>
@@ -176,7 +178,11 @@ namespace VibrantbitLauncher.ViewModels.Pages
                             snackbarService.Show("提示", $"Minecraft 已退出，{process.ArgumentList}", ControlAppearance.Info, null, snackbarService.DefaultTimeOut);
                         });
                     };
-
+                }
+                catch (InvalidOperationException)
+                {
+                    snackbarService.Show("错误", $"启动失败: 请登录一个用户", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
+                }
             }
             else
             {
