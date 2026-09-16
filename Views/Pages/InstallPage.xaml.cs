@@ -73,7 +73,7 @@ namespace VibrantbitLauncher.Views.Pages
             {
                 foreach (var x in await FabricInstaller.EnumerableFabricAsync(McVersion))
                 {
-                    listBox2.Items.Add(x.DisplayVersion);
+                    listBox1.Items.Add(x.DisplayVersion);
                 }
             }
             catch (Exception ex)

@@ -14,9 +14,17 @@ namespace VibrantbitLauncher.Views.Pages
        
         public RunPage()
         {
-            this.DataContext = new RunPageViewModel();
-
+            var viewModel = App.Services.GetService(typeof(RunPageViewModel)) as RunPageViewModel;
+            this.DataContext = viewModel;
             InitializeComponent();
+            this.Loaded += async (s, e) =>
+            {
+                if (viewModel != null && !viewModel.IsLoaded)
+                {
+                    await viewModel.LoadAsync();
+                    viewModel.IsLoaded = true;
+                }
+            };
         }
 
 

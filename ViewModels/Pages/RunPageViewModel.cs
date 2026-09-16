@@ -9,20 +9,22 @@ using VibrantbitLauncher.Views.Windows;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 using Xunit.Internal;
+using System.Threading.Tasks;
 namespace VibrantbitLauncher.ViewModels.Pages
 {
     public partial class RunPageViewModel : ViewModelBase
     {
-        private MinecraftParser minecraftParser = ".\\.minecraft";
-        ObservableCollection<JavaEntry> asyncJavas = [.. JavaUtil.EnumerableJavaAsync().ToBlockingEnumerable()];
-        ObservableCollection<MinecraftEntry> minecrafts = [];
-        ObservableCollection<LocalVersion> minecraftVersions = [];
-        ObservableCollection<string> javaVersions = [];
-        MinecraftRunner runner;
+        private MinecraftParser minecraftParser = new(".\\.minecraft");
+        private List<JavaEntry> asyncJavas = [.. JavaUtil.EnumerableJavaAsync().ToBlockingEnumerable().ToList()];
+        private ObservableCollection<MinecraftEntry> minecrafts = new ObservableCollection<MinecraftEntry>();
+        private ObservableCollection<LocalVersion> minecraftVersions = new ObservableCollection<LocalVersion>();
+        private ObservableCollection<string> javaVersions = new ObservableCollection<string>();
+        private MinecraftRunner runner;
         private SnackbarService snackbarService = new();
         string selectedVersion = "";
         private string accountName;
 
+        public bool IsLoaded { get; set; }
         public RelayCommand<SnackbarPresenter> LoadCommand { get; set; }
         public RelayCommand RefreshCommand { get; set; }
 
@@ -44,45 +46,81 @@ namespace VibrantbitLauncher.ViewModels.Pages
 
         public RunPageViewModel()
         {
-            asyncJavas.ForEach(x =>
-            {
-                javaVersions.Add(x.JavaVersion);
-            });
-            try
-            {
-                minecrafts = new ObservableCollection<MinecraftEntry>(minecraftParser.GetMinecrafts());
-                minecrafts.Clear();
-                minecraftParser.GetMinecrafts().ForEach(x =>
-                {
-                    minecraftVersions.Add(new LocalVersion { Version = x.Version.VersionId, RunCommand = new(RunMinecraft), SettingsCommand = new(Settings) });
-                });
-            }
-            catch (Exception ex)
-            {
-                snackbarService.Show("错误", $"无法获取本地版本{ex}, ControlAppearance.Danger, null, snackbarService.DefaultTimeOut", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
-            }
+            IsLoaded = false;
             LoadCommand = new RelayCommand<SnackbarPresenter>(Load);
             RefreshCommand = new RelayCommand(Refresh);
-
         }
-        void Refresh()
+
+        public async Task LoadAsync()
         {
-            Task.Run(() =>
+            await Task.Run(() =>
             {
-                minecraftParser = new(".\\.minecraft");
-                minecrafts = new ObservableCollection<MinecraftEntry>(minecraftParser.GetMinecrafts());
-                MinecraftVersions.Clear();
-                minecraftParser.GetMinecrafts().ForEach(x =>
+                try
                 {
-                    MinecraftVersions.Add(new LocalVersion { Version = x.Version.VersionId, RunCommand = new(RunMinecraft), SettingsCommand = new(Settings) });
-                });
+                    var javas = JavaUtil.EnumerableJavaAsync().ToBlockingEnumerable().ToList();
+                    asyncJavas = javas;
+                }
+                catch { }
+
+                try
+                {
+                    var localMinecrafts = minecraftParser.GetMinecrafts();
+                    App.Current.Dispatcher.Invoke(() =>
+                    {
+                        minecraftVersions.Clear();
+                        foreach (var x in localMinecrafts)
+                        {
+                            minecraftVersions.Add(new LocalVersion { Version = x.Id, RunCommand = new(RunMinecraft), SettingsCommand = new(Settings) });
+                        }
+                    });
+
+                    App.Current.Dispatcher.Invoke(() =>
+                    {
+                        javaVersions.Clear();
+                        foreach (var j in asyncJavas)
+                        {
+                            javaVersions.Add(j.JavaVersion);
+                        }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    App.Current.Dispatcher.Invoke(() => snackbarService.Show("错误", $"无法获取本地版本: {ex.Message}", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut));
+                }
+            });
+
+            IsLoaded = true;
+        }
+
+        private void Refresh()
+        {
+            Task.Run(async () =>
+            {
+                try
+                {
+                    var localMinecrafts = minecraftParser.GetMinecrafts();
+                    App.Current.Dispatcher.Invoke(() =>
+                    {
+                        minecraftVersions.Clear();
+                        foreach (var x in localMinecrafts)
+                        {
+                            minecraftVersions.Add(new LocalVersion { Version = x.Id, RunCommand = new(RunMinecraft), SettingsCommand = new(Settings) });
+                        }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    App.Current.Dispatcher.Invoke(() => snackbarService.Show("错误", $"无法刷新本地版本: {ex.Message}", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut));
+                }
             });
         }
+
         private void Load(SnackbarPresenter snackbarPresenter)
         {
             this.snackbarService.SetSnackbarPresenter(snackbarPresenter);
-
+            Refresh();
         }
+
         void Settings(string McVersion)
         {
             if (!string.IsNullOrEmpty(McVersion))
@@ -90,55 +128,62 @@ namespace VibrantbitLauncher.ViewModels.Pages
                 var window = new McSettingsWindow();
                 Messenger.Default.Send(McVersion, "McVersionForSetting");
                 window.ShowDialog();
-
             }
             else
             {
                 snackbarService.Show("错误", "请选择一个版本", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
             }
         }
+
         async void RunMinecraft(string McVersion)
         {
             if (!string.IsNullOrEmpty(McVersion))
             {
                 MinecraftEntry selectedMinecraftEntry = minecraftParser.GetMinecraft(McVersion);
+                JavaEntry javaPath = null;
+                try
+                {
+                    javaPath = selectedMinecraftEntry.GetAppropriateJava(asyncJavas);
+                }
+                catch (InvalidOperationException)
+                {
+                    snackbarService.Show("错误", "未找到匹配的 Java 版本，请安装 Java 或刷新 Java 列表", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
+                    return;
+                }
                 runner = new(new LaunchConfig
                 {
                     Account = MainWindowViewModel.MainModel.Account,
                     MaxMemorySize = 2048,
                     MinMemorySize = 512,
                     LauncherName = "VibrantbitLauncher",
-                    JavaPath = selectedMinecraftEntry.GetAppropriateJava(asyncJavas),
+                    JavaPath = javaPath,
                 }, minecraftParser);
-                try
-                {
-                    snackbarService.Show($"正在启动 {selectedMinecraftEntry.Version.VersionId}，请稍等...", "提示", ControlAppearance.Info, null, snackbarService.DefaultTimeOut);
-                    var process = await runner.RunAsync(selectedMinecraftEntry);
-                    process.Started += (_, _) => {
-                        App.Current.Dispatcher.Invoke(() => {
+
+                    snackbarService.Show($"正在启动 {selectedMinecraftEntry.Id}，请稍等...", "提示", ControlAppearance.Info, null, snackbarService.DefaultTimeOut);
+                    var process = await runner.RunAsync(selectedMinecraftEntry.Id);
+                    process.Started += (_, _) =>
+                    {
+                        App.Current.Dispatcher.Invoke(() =>
+                        {
                             snackbarService.Show("成功", "Minecraft 已启动", ControlAppearance.Success, null, snackbarService.DefaultTimeOut);
                         });
                     };
                     process.OutputLogReceived += (_, arg) => writeLog(arg.Data.Time, arg.Data.Log);
                     process.Exited += (_, arg) =>
                     {
-                        App.Current.Dispatcher.Invoke(() => {
+                        App.Current.Dispatcher.Invoke(() =>
+                        {
                             snackbarService.Show("提示", $"Minecraft 已退出，{process.ArgumentList}", ControlAppearance.Info, null, snackbarService.DefaultTimeOut);
                         });
                     };
-                }
-                catch (Exception)
-                {
-                    snackbarService.Show("错误", "请登录一个用户", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
-                }
 
             }
             else
             {
                 snackbarService.Show("错误", "请选择一个版本", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
             }
-
         }
+
         void writeLog(string time, string message)
         {
             using (StreamWriter sw = new StreamWriter("log.txt", true))

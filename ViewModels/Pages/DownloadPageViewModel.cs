@@ -24,15 +24,18 @@ namespace VibrantbitLauncher.ViewModels.Pages
         private string mcFolder;
 
 
-        ObservableCollection<McVersion> mcVersions = [];
+        ObservableCollection<McVersion> mcVersions = new ObservableCollection<McVersion>();
         public ObservableCollection<McVersion> McVersions
         {
             get => mcVersions;
             set => Set(ref mcVersions, value);
         }
+        public RelayCommand<string> DownloadCommand { get; }
+        public bool IsLoaded { get; set; }
         public DownloadPageViewModel()
         {
-            mcFolder = MainWindowViewModel.MainModel.MinecraftFolder;
+            DownloadCommand = new RelayCommand<string>(Download);
+            IsLoaded = false;
         }
         
 

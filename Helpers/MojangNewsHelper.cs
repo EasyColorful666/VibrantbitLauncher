@@ -18,7 +18,7 @@ namespace VibrantbitLauncher.Helpers
         public static async Task<List<NewsItem>> GetNewsListAsync()
         {
             using HttpClient httpClient = new HttpClient();
-            string json = await httpClient.GetStringAsync(NewsUrl);
+            string json = await httpClient.GetStringAsync(NewsUrl);     
 
             // 配置解析选项
             var jsonOptions = new JsonSerializerOptions

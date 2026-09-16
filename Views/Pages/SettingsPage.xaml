@@ -1,4 +1,4 @@
-﻿<Page
+<Page
     x:Class="VibrantbitLauncher.Views.Pages.SettingsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -21,46 +21,80 @@
         <helpers:EnumToBooleanConverter x:Key="EnumToBooleanConverter" />
     </Page.Resources>
 
-    <Grid>
-        <TextBlock
-            Margin="0,0,0,425"
-            FontSize="20"
-            FontWeight="Medium"
-            Text="外观" />
-        <TextBlock Margin="0,37,0,397"><Run Language="zh-cn" Text="主题" /></TextBlock>
-        <!--  亮色主题单选按钮  -->
-        <RadioButton
-            Margin="0,65,0,0"
-            VerticalAlignment="Top"
-            Command="{Binding ChangeThemeCommand}"
-            CommandParameter="theme_light"
-            Content="亮色"
-            GroupName="themeSelect"
-            IsChecked="{Binding CurrentTheme, ConverterParameter=Light, Converter={StaticResource EnumToBooleanConverter}, Mode=OneWay}" />
-        <!--  暗色主题单选按钮  -->
-        <RadioButton
-            Margin="0,105,0,0"
-            VerticalAlignment="Top"
-            Command="{Binding ChangeThemeCommand}"
-            CommandParameter="theme_dark"
-            Content="暗色"
-            GroupName="themeSelect"
-            IsChecked="{Binding CurrentTheme, ConverterParameter=Dark, Converter={StaticResource EnumToBooleanConverter}, Mode=OneWay}" />
-        <TextBlock
-            Margin="0,331,0,94"
-            FontSize="20"
-            FontWeight="Medium"><Run Language="zh-cn" Text="关于" /><Run Text=" VibrantbitLauncher" /></TextBlock>
-        <ui:TextBlock
-            x:Name="textBlock"
-            Margin="0,356,0,27"
-            TextWrapping="Wrap">
-            <Run Text="Colorful craft launcher4是colorful craft launcher的新版, 更新了UI,更新了许多逻辑,修复了bug,更多功能敬请期待" />
+    <ScrollViewer VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="20,16,20,16">
 
-            <Run Language="zh-cn" Text="制作不易,敬请谅解!" />
-        </ui:TextBlock>
-        <ui:TextBlock Margin="0,142,0,292" Text="背景" />
-        <ui:TextBox HorizontalAlignment="Left" Margin="10,172,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="345" IsReadOnly="True"/>
-        <ui:Button Content="选择" Margin="360,172,0,0" VerticalAlignment="Top" Height="35" Click="Button_Click"/>
+            <!-- ===== 外观 ===== -->
+            <TextBlock FontSize="20" FontWeight="Medium" Text="外观" Margin="0,0,0,8" />
 
-    </Grid>
+            <TextBlock Text="主题" Margin="0,0,0,4" />
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                <RadioButton
+                    Command="{Binding ChangeThemeCommand}"
+                    CommandParameter="theme_light"
+                    Content="亮色"
+                    GroupName="themeSelect"
+                    IsChecked="{Binding CurrentTheme, ConverterParameter=Light, Converter={StaticResource EnumToBooleanConverter}, Mode=OneWay}"
+                    Margin="0,0,16,0" />
+                <RadioButton
+                    Command="{Binding ChangeThemeCommand}"
+                    CommandParameter="theme_dark"
+                    Content="暗色"
+                    GroupName="themeSelect"
+                    IsChecked="{Binding CurrentTheme, ConverterParameter=Dark, Converter={StaticResource EnumToBooleanConverter}, Mode=OneWay}" />
+            </StackPanel>
+
+            <!-- ===== 游戏设置 ===== -->
+            <TextBlock FontSize="20" FontWeight="Medium" Text="游戏设置" Margin="0,0,0,8" />
+
+            <!-- Minecraft 文件夹 -->
+            <TextBlock Text="Minecraft 文件夹" Margin="0,0,0,4" />
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                <ui:TextBox
+                    Width="420"
+                    IsReadOnly="True"
+                    Text="{Binding MinecraftFolder, Mode=OneWay}"
+                    ToolTip="{Binding MinecraftFolder}" />
+                <ui:Button
+                    Content="选择"
+                    Margin="8,0,0,0"
+                    Padding="16,0"
+                    Click="OnSelectMinecraftFolder" />
+            </StackPanel>
+
+            <!-- Java 选择 -->
+            <TextBlock Text="Java 版本" Margin="0,0,0,4" />
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,24">
+                <ComboBox
+                    Width="420"
+                    ItemsSource="{Binding JavaEntries}"
+                    SelectedItem="{Binding SelectedJava, Mode=TwoWay}"
+                    ToolTip="{Binding SelectedJava.JavaPath}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding JavaVersion}" FontWeight="SemiBold" />
+                                <TextBlock Text="  -  " Foreground="Gray" />
+                                <TextBlock Text="{Binding JavaPath}" Foreground="Gray" FontSize="11" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <ui:Button
+                    Content="刷新"
+                    Margin="8,0,0,0"
+                    Padding="16,0"
+                    Command="{Binding RefreshJavaCommand}" />
+            </StackPanel>
+
+            <!-- ===== 关于 ===== -->
+            <TextBlock FontSize="20" FontWeight="Medium" Text="关于 VibrantbitLauncher" Margin="0,0,0,8" />
+            <TextBlock TextWrapping="Wrap" Foreground="Gray">
+                <Run Text="Colorful craft launcher4 是 colorful craft launcher 的新版，更新了 UI，更新了许多逻辑，修复了 bug，更多功能敬请期待。" />
+                <LineBreak />
+                <Run Text="制作不易，敬请谅解！" />
+            </TextBlock>
+
+        </StackPanel>
+    </ScrollViewer>
 </Page>

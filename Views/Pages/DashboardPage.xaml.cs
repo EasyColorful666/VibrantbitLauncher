@@ -18,9 +18,18 @@ namespace VibrantbitLauncher.Views.Pages
 
         public DashboardPage()
         {
-            this.DataContext = new DashboardPageViewModel();
+            var viewModel = App.Services.GetService(typeof(DashboardPageViewModel)) as DashboardPageViewModel;
+            this.DataContext = viewModel;
             InitializeComponent();
-            Loaded += DashboardPage_Loaded;
+            Loaded += async (s, e) =>
+            {
+                if (viewModel != null && !viewModel.IsLoaded)
+                {
+                    await viewModel.LoadNewsAsync();
+                    viewModel.IsLoaded = true;
+                }
+                listbox1.ItemsSource = viewModel?.News;
+            };
         }
 
         private async void DashboardPage_Loaded(object sender, RoutedEventArgs e)

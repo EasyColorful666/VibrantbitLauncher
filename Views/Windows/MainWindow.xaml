@@ -42,28 +42,27 @@
             <ui:NavigationView.MenuItems>
                 <ui:NavigationViewItem
                     Content="主页 "
-                    Icon="{ui:SymbolIcon Symbol=Home24,
-                                         Filled=True}"
+                    Icon="{ui:SymbolIcon Symbol=Home24}"
                     TargetPageType="{x:Type pages:DashboardPage}" />
                 <ui:NavigationViewItem
                     Content="账户 "
-                    Icon="{ui:SymbolIcon Symbol=Person24,
-                                         Filled=True}"
+                    Icon="{ui:SymbolIcon Symbol=Person24}"
                     TargetPageType="{x:Type pages:AccountPage}" />
                 <ui:NavigationViewItem
                     Content="下载 "
-                    Icon="{ui:SymbolIcon Symbol=ArrowCircleDown24,
-                                         Filled=True}"
+                    Icon="{ui:SymbolIcon Symbol=ArrowCircleDown24}"
                     TargetPageType="{x:Type pages:DownloadPage}" />
                 <ui:NavigationViewItem
+                    Content="模组 "
+                    Icon="{ui:SymbolIcon Symbol=Apps24}"
+                    TargetPageType="{x:Type pages:DownloadResourcesPage}" />
+                <ui:NavigationViewItem
                     Content="运行"
-                    Icon="{ui:SymbolIcon Symbol=TriangleRight20,
-                                         Filled=True}"
+                    Icon="{ui:SymbolIcon Symbol=TriangleRight20}"
                     TargetPageType="{x:Type pages:RunPage}" />
                 <ui:NavigationViewItem
                     Content="多人"
-                    Icon="{ui:SymbolIcon Symbol=PeopleCommunity24,
-                                         Filled=True}"
+                    Icon="{ui:SymbolIcon Symbol=PeopleCommunity24}"
                     TargetPageType="{x:Type pages:MultiplayerPage}" />
 
             </ui:NavigationView.MenuItems>

@@ -28,7 +28,7 @@
 
     </i:Interaction.Triggers>
     <Grid>
-        <ui:SnackbarPresenter x:Name="SnackbarPresenter" />
+        <ui:SnackbarPresenter x:Name="SnackbarPresenter" Panel.ZIndex="2" />
         <ListBox
             x:Name="listbox1"
             Height="340"

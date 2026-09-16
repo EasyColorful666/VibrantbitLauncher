@@ -1,32 +1,32 @@
-﻿using GalaSoft.MvvmLight.Messaging;
 using Microsoft.Win32;
+using System;
+using System.Windows;
+using System.Windows.Controls;
 using VibrantbitLauncher.ViewModels.Pages;
-using Wpf.Ui.Abstractions.Controls;
 
 namespace VibrantbitLauncher.Views.Pages
 {
-    public partial class SettingsPage : System.Windows.Controls.Page
+    public partial class SettingsPage : Page
     {
-        
-
         public SettingsPage()
         {
-            var ViewModel = new SettingsPageViewModel();
-            DataContext = ViewModel;
-
             InitializeComponent();
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// 选择 Minecraft 游戏文件夹。
+        /// </summary>
+        private void OnSelectMinecraftFolder(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "图片文件|*.png;*.jpg";
-            openFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-            openFileDialog.Title = "打开图片文件";
-            openFileDialog.Multiselect = false;
-            if (openFileDialog.ShowDialog() is true)
+            var dialog = new OpenFolderDialog
             {
-                Messenger.Default.Send<string>(openFileDialog.FileName, "UpdateBackground");
+                Title = "选择 Minecraft 文件夹",
+                InitialDirectory = Environment.CurrentDirectory
+            };
+
+            if (dialog.ShowDialog() == true && DataContext is SettingsPageViewModel vm)
+            {
+                vm.MinecraftFolder = dialog.FolderName;
             }
         }
     }

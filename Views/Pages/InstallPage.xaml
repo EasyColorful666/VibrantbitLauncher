@@ -11,6 +11,7 @@
     Title="MultiplayerPage"
     Width="800"
     Height="450"
+    d:DataContext="{d:DesignInstance Type=local:InstallPageViewModel}"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d">
@@ -24,7 +25,7 @@
 
     </i:Interaction.Triggers>
     <Grid>
-        <ui:SnackbarPresenter x:Name="SnackbarPresenter" Panel.ZIndex="2" Margin="0,0,85,0" />
+        <ui:SnackbarPresenter x:Name="SnackbarPresenter" Margin="0,0,85,0" />
         <TextBlock
             x:Name="textBlock"
             Margin="10,10,0,0"
@@ -56,7 +57,10 @@
                         Text="Forge" />
                 </StackPanel>
             </Expander.Header>
-            <ListBox x:Name="listBox" />
+            <ListBox
+                x:Name="listBox"
+                Padding="0,3,0,0"
+                SelectedItem="{Binding SelectForgeVersion}" />
         </Expander>
         <Expander
             x:Name="expander1"
@@ -91,7 +95,7 @@
                         Text="Fabric" />
                 </StackPanel>
             </Expander.Header>
-            <ListBox x:Name="listBox1" />
+            <ListBox x:Name="listBox1" SelectedItem="{Binding SelectFabricVersion}" />
         </Expander>
         <Expander
             x:Name="expander2"
@@ -115,7 +119,7 @@
                         Text="OptiFine" />
                 </StackPanel>
             </Expander.Header>
-            <ListBox x:Name="listBox2" />
+            <ListBox x:Name="listBox2" SelectedItem="{Binding SelectOptifineVersion}" />
         </Expander>
         <Expander
             x:Name="expander3"
@@ -139,16 +143,26 @@
                         Text="Quilt" />
                 </StackPanel>
             </Expander.Header>
-            <ListBox x:Name="listBox3" />
+            <ListBox x:Name="listBox3" SelectedItem="{Binding SelectQuiltVersion}" />
         </Expander>
-        <ui:Button
-            x:Name="button"
-            Width="205"
-            Height="50"
-            Margin="510,10,0,0"
-            VerticalAlignment="Top"
-            Command="{Binding InstallCommand}"
-            Content="安装" />
+        <StackPanel Orientation="Horizontal" Margin="510,10,0,0" HorizontalAlignment="Left">
+            <ui:Button
+                x:Name="button"
+                Width="140"
+                Height="50"
+                VerticalAlignment="Top"
+                Command="{Binding InstallCommand}"
+                IsEnabled="{Binding CanInstall}"
+                Content="安装" />
+            <ui:Button
+                x:Name="refreshButton"
+                Width="60"
+                Height="50"
+                Margin="10,0,0,0"
+                VerticalAlignment="Top"
+                Command="{Binding RefreshCommand}"
+                Content="刷新" />
+        </StackPanel>
         <TextBlock
             x:Name="textBlock1"
             Width="163"
@@ -165,8 +179,7 @@
             Height="14"
             Margin="10,408,0,0"
             HorizontalAlignment="Left"
-            VerticalAlignment="Top"
-            Value="{Binding InstallProgress}" />
+            VerticalAlignment="Top" Value="{Binding InstallProgress}" />
         <TextBlock
             x:Name="textBlock2"
             Width="163"

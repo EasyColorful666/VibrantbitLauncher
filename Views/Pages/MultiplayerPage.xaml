@@ -5,10 +5,136 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:VibrantbitLauncher.Views.Pages"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="MultiplayerPage"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d">
 
-    <Grid />
+    <Grid>
+        <ui:SnackbarPresenter x:Name="SnackbarPresenter" />
+        <GroupBox Margin="0,0,112,225">
+            <GroupBox.Header>
+                <RadioButton
+                    x:Name="r1"
+                    Checked="RadioButton_Checked"
+                    Content="我要当房主"
+                    GroupName="Mode"
+                    IsChecked="False" />
+            </GroupBox.Header>
+            <Grid x:Name="grid1">
+                <Button
+                    x:Name="button"
+                    Width="604"
+                    Height="38"
+                    Margin="0,89,0,0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Top"
+                    Click="button_Click"
+                    Content="启动服务" />
+                <Button
+                    x:Name="button1"
+                    Width="604"
+                    Height="45"
+                    Margin="0,132,0,0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Top"
+                    Click="button1_Click"
+                    Content="停止服务"
+                    RenderTransformOrigin="0.5,0.5">
+                    <Button.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform />
+                            <SkewTransform AngleY="0.119" />
+                            <RotateTransform />
+                            <TranslateTransform Y="0.547" />
+                        </TransformGroup>
+                    </Button.RenderTransform>
+                </Button>
+                <TextBox
+                    x:Name="textBox1"
+                    Width="495"
+                    Height="32"
+                    Margin="158,17,0,0"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    TextWrapping="Wrap" />
+                <TextBlock
+                    x:Name="textBlock3"
+                    Width="62"
+                    Margin="33,20,0,0"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    FontSize="20"
+                    Text="密钥"
+                    TextWrapping="Wrap" />
+                <TextBlock
+                    x:Name="textBlock1"
+                    Width="88"
+                    Height="20"
+                    Margin="20,64,0,0"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    FontSize="16"
+                    TextWrapping="Wrap"><Run Language="zh-cn" Text="本机虚拟IP" /></TextBlock>
+                <TextBox
+                    x:Name="textBox3"
+                    Width="494"
+                    Height="30"
+                    Margin="158,54,0,0"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    IsReadOnly="True"
+                    TextWrapping="Wrap" />
+            </Grid>
+        </GroupBox>
+        <GroupBox Margin="0,225,112,0">
+            <GroupBox.Header>
+                <RadioButton
+                    Checked="RadioButton_Checked_1"
+                    Content="我要当房客"
+                    GroupName="Mode" />
+            </GroupBox.Header>
+            <Grid x:Name="grid2">
+                <Button
+                    x:Name="button2"
+                    Width="608"
+                    Height="33"
+                    Margin="0,111,0,0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Top"
+                    Click="button2_Click"
+                    Content="启动服务" />
+                <Button
+                    x:Name="button3"
+                    Width="608"
+                    Height="31"
+                    Margin="0,147,0,0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Top"
+                    Click="button1_Click"
+                    Content="停止服务" />
+                <TextBox
+                    x:Name="textBox2"
+                    Width="526"
+                    Height="30"
+                    Margin="124,10,0,0"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    FontSize="12"
+                    IsReadOnly="True"
+                    TextWrapping="Wrap" />
+                <TextBlock
+                    x:Name="textBlock3复制__C_"
+                    Width="53"
+                    Height="24"
+                    Margin="17,25,0,0"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    FontSize="16"
+                    Text="密钥"
+                    TextWrapping="Wrap" />
+            </Grid>
+        </GroupBox>
+    </Grid>
 </Page>

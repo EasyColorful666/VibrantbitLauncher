@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Reflection;
 using System.Windows.Threading;
 using VibrantbitLauncher.Services;
@@ -52,6 +52,9 @@ namespace VibrantbitLauncher
                 services.AddSingleton<AccountPageViewModel>();
                 services.AddSingleton<DownloadPage>();
                 services.AddSingleton<DownloadPageViewModel>();
+                services.AddSingleton<DownloadResourcesPage>();
+                services.AddSingleton<DownloadResourcesViewModel>();
+                services.AddSingleton<ModPage>();
                 services.AddSingleton<MultiplayerPage>();
                 services.AddSingleton<MultiplayerPageViewModel>();
                 services.AddSingleton<InstallPage>();
@@ -76,6 +79,10 @@ namespace VibrantbitLauncher
         private async void OnStartup(object sender, StartupEventArgs e)
         { 
             await _host.StartAsync();
+
+            // 加载配置并应用主题/主题色（自动完成，用户不可见）
+            SettingsService.Load();
+            SettingsService.ApplyTheme();
 
             InitializeHelper.Initialize(settings => {
                 settings.MaxThread = 256; // 最大下载线程

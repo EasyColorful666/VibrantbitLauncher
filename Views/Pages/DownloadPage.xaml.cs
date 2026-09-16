@@ -28,87 +28,110 @@ namespace VibrantbitLauncher.Views.Pages
     public partial class DownloadPage : Page
     {
         private ICollectionView versionView;
-        SnackbarService snackbarService = new();
-        DownloadPageViewModel viewModel = new DownloadPageViewModel();
+        private SnackbarService snackbarService = new();
+        private DownloadPageViewModel viewModel = App.Services.GetService(typeof(DownloadPageViewModel)) as DownloadPageViewModel;
         private DispatcherTimer debounceTimer;
+
         public DownloadPage()
         {
             InitializeComponent();
-            LoadMcVersions();
             this.DataContext = viewModel;
+
+            // 预先创建空的 CollectionView 并绑定到 ListBox，这样 UI 能尽快响应并显示占位（虚拟化生效）
+            versionView = new ListCollectionView(viewModel.McVersions);
+            versionView.Filter = VersionFilter;
+            listBox.ItemsSource = versionView;
+
+            // 初始化防抖定时器
             debounceTimer = new DispatcherTimer();
             debounceTimer.Interval = TimeSpan.FromMilliseconds(260);
             debounceTimer.Tick += (s, e) =>
             {
                 debounceTimer.Stop();
-                versionView.Refresh();          // 真正执行过滤
+                versionView.Refresh();
+            };
+
+            // 页面加载时开始增量加载数据（后台线程），不阻塞 UI
+            this.Loaded += (s, e) =>
+            {
+                snackbarService.SetSnackbarPresenter(SnackbarPresenter);
+                if (!viewModel.IsLoaded)
+                {
+                    _ = LoadMcVersionsAsyncIncremental();
+                    viewModel.IsLoaded = true;
+                }
             };
         }
 
-        private void Page_Loaded(object sender, EventArgs e)
+        private async Task LoadMcVersionsAsyncIncremental()
         {
-            snackbarService.SetSnackbarPresenter(SnackbarPresenter);
-        }
-        public async void LoadMcVersions()
-        {
-            ObservableCollection<McVersion> mcVersions = new ObservableCollection<McVersion>();
-            await Task.Run(async () =>
+            // 增量加载实现：在后台线程执行可能的网络/IO 操作，并按批次将数据推回 UI，减少一次性分配带来的短时卡顿。
+            viewModel.McVersions.Clear();
+            const int batchSize = 50;
+            try
             {
-                var entries = await VanillaInstaller.EnumerableMinecraftAsync();
-                foreach (var entry in entries)
+                await Task.Run(async () =>
                 {
-                    mcVersions.Add(new McVersion
+                    var entries = await VanillaInstaller.EnumerableMinecraftAsync();
+                    var batch = new List<McVersion>(batchSize);
+                    foreach (var entry in entries)
                     {
-                        Version = entry.McVersion,
-                        Date = entry.ReleaseTime.ToString("yyyy-MM-dd"),
-                        DownloadCommand = new RelayCommand<string>(viewModel.Download)
+                        batch.Add(new McVersion
+                        {
+                            Version = entry.McVersion,
+                            Date = entry.ReleaseTime.ToString("yyyy-MM-dd")
+                        });
 
-                    });
-                }
-                
-            });
+                        if (batch.Count >= batchSize)
+                        {
+                            var toAdd = batch.ToArray();
+                            batch.Clear();
+                            // 使用 Dispatcher 将一批数据一次性添加到 UI 集合，减少 UI 线程切换次数。
+                            App.Current.Dispatcher.Invoke(() =>
+                            {
+                                foreach (var v in toAdd) viewModel.McVersions.Add(v);
+                                // 刷新过滤视图以便立即显示新增项（如果需要）
+                                versionView.Refresh();
+                            });
+                            // 给调度器一些时间处理 UI 操作，避免长时间占用后台线程
+                            await Task.Delay(10);
+                        }
+                    }
 
-            App.Current.Dispatcher.Invoke(() =>
+                    if (batch.Count > 0)
+                    {
+                        var toAdd = batch.ToArray();
+                        App.Current.Dispatcher.Invoke(() =>
+                        {
+                            foreach (var v in toAdd) viewModel.McVersions.Add(v);
+                            versionView.Refresh();
+                        });
+                    }
+                });
+            }
+            catch (Exception ex)
             {
-                viewModel.McVersions.Clear();
-                viewModel.McVersions = mcVersions;
-                listBox.Items.Clear();
-                versionView = CollectionViewSource.GetDefaultView(mcVersions);
-                versionView.Filter = VersionFilter;
-                listBox.ItemsSource = versionView;
-                textBox.Text = "";
-                versionView.Refresh();
-            });
-
+                App.Current.Dispatcher.Invoke(() => snackbarService.Show("错误", ex.Message, Wpf.Ui.Controls.ControlAppearance.Danger, null, snackbarService.DefaultTimeOut));
+            }
         }
 
         private bool VersionFilter(object item)
         {
-            if (item is not McVersion ver)
-                return false;
-
-            // 搜索框为空 → 显示所有
-            if (string.IsNullOrEmpty(textBox.Text))
-                return true;
-
-            // 只查 Version，忽略大小写
+            if (item is not McVersion ver) return false;
+            if (string.IsNullOrEmpty(textBox.Text)) return true;
             return ver.Version.Contains(textBox.Text, StringComparison.OrdinalIgnoreCase);
         }
 
-        // 搜索框内容变化时立即刷新视图（无防抖，实时过滤）
-        private void TextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            debounceTimer.Stop();   // 停止之前的计时
-            debounceTimer.Start();  // 重新开始计时
+            debounceTimer.Stop();
+            debounceTimer.Start();
         }
     }
 
     public class McVersion
     {
-
         public string Version { get; set; }
         public string Date { get; set; }
-
-        public RelayCommand<string> DownloadCommand { get; set; }
     }
 }

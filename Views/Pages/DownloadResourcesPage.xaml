@@ -1,28 +1,29 @@
-﻿<Page
-    x:Class="VibrantbitLauncher.Views.Pages.DownloadPage"
+<Page
+    x:Class="VibrantbitLauncher.Views.Pages.DownloadResourcesPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:VibrantbitLauncher.ViewModels.Pages"
+    xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+    xmlns:local="clr-namespace:VibrantbitLauncher.Views.Pages"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:pages="clr-namespace:VibrantbitLauncher.ViewModels.Pages"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-    Title="DownloadPage"
-    d:DataContext="{d:DesignInstance Type=local:DownloadPageViewModel}"
+    Title="DownloadResourcesPage"
+    d:DataContext="{d:DesignInstance Type=pages:DownloadResourcesViewModel}"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d">
     <Page.DataContext>
-        <local:DownloadPageViewModel />
+        <pages:DownloadResourcesViewModel />
     </Page.DataContext>
-
     <Grid>
-        <ui:SnackbarPresenter x:Name="SnackbarPresenter" Margin="0,0,140,0" />
         <ListBox
             x:Name="listBox"
             Margin="0,37,140,0"
+            ItemsSource="{Binding ModrinthMods}"
             ScrollViewer.CanContentScroll="True"
             VirtualizingStackPanel.IsVirtualizing="True"
-            VirtualizingStackPanel.VirtualizationMode="Recycling">
+            VirtualizingStackPanel.VirtualizationMode="Recycling" d:ItemsSource="{d:SampleData ItemCount=5}">
             <ListBox.Background>
                 <SolidColorBrush Color="LightGray" />
             </ListBox.Background>
@@ -33,50 +34,49 @@
             </ListBox.ItemsPanel>
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Margin="5" Orientation="Horizontal">
-                        <!--  图片绑定  -->
+                    <Grid Margin="5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="200" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <Image
+                            Grid.Column="0"
                             Width="50"
                             Height="50"
                             Margin="0,0,10,0"
-                            Source="/Assets/Grass_Block.png" />
-                        <!--  文本信息  -->
-                        <StackPanel Width="200">
-                            <TextBlock FontWeight="Bold" Text="{Binding Version}" />
-                            <TextBlock Foreground="Green" Text="{Binding Date, StringFormat=C}" />
+                            Source="{Binding ImagePath}" />
+                        <StackPanel Grid.Column="1">
+                            <TextBlock FontWeight="Bold" Text="{Binding Name}" />
+                            <TextBlock Foreground="Green" Text="{Binding MinecraftVersions}" />
                         </StackPanel>
                         <Button
+                            Grid.Column="3"
                             Width="100"
                             Height="30"
-                            Margin="190,0,0,0"
-                            Command="{Binding DataContext.DownloadCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                            CommandParameter="{Binding Version}"
+                            Click="OnDownloadClick"
                             Content="下载" />
-                    </StackPanel>
-
-
+                    </Grid>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
+
+        <!-- 搜索框 -->
         <ui:TextBox
             x:Name="textBox"
-            Width="607"
-            Height="26"
+            Width="360"
+            Height="37"
             Margin="9,0,0,0"
             HorizontalAlignment="Left"
             VerticalAlignment="Top"
             FontSize="16"
-            RenderTransformOrigin="0.5,0.5"
-            TextChanged="TextBox_TextChanged"
             TextWrapping="Wrap">
-            <ui:TextBox.RenderTransform>
-                <TransformGroup>
-                    <ScaleTransform />
-                    <SkewTransform AngleY="0.095" />
-                    <RotateTransform />
-                    <TranslateTransform Y="0.498" />
-                </TransformGroup>
-            </ui:TextBox.RenderTransform>
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="TextChanged">
+                    <i:InvokeCommandAction Command="{Binding SerachCommand}" CommandParameter="{Binding ElementName=textBox, Path=Text}" />
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
             <ui:TextBox.Resources>
                 <VisualBrush
                     x:Key="HelpBrush"
@@ -85,11 +85,7 @@
                     Stretch="None"
                     TileMode="None">
                     <VisualBrush.Visual>
-                        <TextBlock
-                            Cursor=""
-                            FontSize="16"
-                            FontStyle="Italic"
-                            Text="查找版本" />
+                        <TextBlock FontSize="16" Text="搜索模组..." />
                     </VisualBrush.Visual>
                 </VisualBrush>
             </ui:TextBox.Resources>
@@ -107,6 +103,27 @@
             </ui:TextBox.Style>
         </ui:TextBox>
 
+        <!-- 版本筛选 -->
+        <ComboBox
+            x:Name="versionFilter"
+            Width="110"
+            Height="37"
+            Margin="380,0,0,0"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            ItemsSource="{Binding MinecraftVersions}"
+            SelectedItem="{Binding SelectedVersion, Mode=TwoWay}" />
+
+        <!-- 加载器筛选 -->
+        <ComboBox
+            x:Name="loaderFilter"
+            Width="110"
+            Height="37"
+            Margin="500,0,0,0"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            ItemsSource="{Binding Loaders}"
+            SelectedItem="{Binding SelectedLoader, Mode=TwoWay}" />
 
     </Grid>
 </Page>

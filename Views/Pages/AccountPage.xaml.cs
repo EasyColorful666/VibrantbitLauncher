@@ -9,9 +9,17 @@ namespace VibrantbitLauncher.Views.Pages
         
         public AccountPage()
         {
-            this.DataContext = new AccountPageViewModel();
-
+            var viewModel = App.Services.GetService(typeof(AccountPageViewModel)) as AccountPageViewModel;
+            this.DataContext = viewModel;
             InitializeComponent();
+            this.Loaded += (s, e) =>
+            {
+                if (viewModel != null && !viewModel.IsLoaded)
+                {
+                    viewModel.Load(SnackbarPresenter);
+                    viewModel.IsLoaded = true;
+                }
+            };
         }
 
         
