@@ -170,20 +170,49 @@ namespace VibrantbitLauncher.Views.Pages
 
             isDownloading = true;
 
+            var taskService = App.Services.GetService(typeof(Services.DownloadTaskService)) as Services.DownloadTaskService;
+            var taskName = Path.GetFileName(saveFileDialog.FileName);
+            var task = taskService?.CreateTask(taskName, Models.DownloadTaskType.ModDownload);
+
             try
             {
                 using var httpClient = new HttpClient();
                 using var response = await httpClient.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
                 response.EnsureSuccessStatusCode();
 
+                var totalBytes = response.Content.Headers.ContentLength ?? -1L;
                 using var contentStream = await response.Content.ReadAsStreamAsync();
                 using var fileStream = File.Create(saveFileDialog.FileName);
-                await contentStream.CopyToAsync(fileStream);
 
+                var buffer = new byte[81920];
+                long totalRead = 0;
+                long lastReportedBytes = 0;
+                int read;
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                while ((read = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                {
+                    await fileStream.WriteAsync(buffer, 0, read);
+                    totalRead += read;
+
+                    // 每 200ms 报告一次进度，避免高频刷新 UI
+                    if (totalBytes > 0 && sw.ElapsedMilliseconds >= 200)
+                    {
+                        var percent = (int)(totalRead * 100 / totalBytes);
+                        var intervalBytes = totalRead - lastReportedBytes;
+                        var speed = intervalBytes / sw.Elapsed.TotalSeconds / 1024 / 1024;
+                        taskService?.UpdateProgress(task, percent, $"{speed:F1} MB/s",
+                            $"{totalRead / 1024 / 1024:F1}/{totalBytes / 1024 / 1024:F1} MB");
+                        lastReportedBytes = totalRead;
+                        sw.Restart();
+                    }
+                }
+
+                taskService?.CompleteTask(task, $"已保存到：{saveFileDialog.FileName}");
                 await new UiMessageBox { Title = "下载完成", Content = $"文件已保存到：\n{saveFileDialog.FileName}" }.ShowDialogAsync();
             }
             catch (Exception ex)
             {
+                taskService?.FailTask(task, ex.Message);
                 await new UiMessageBox { Title = "下载失败", Content = ex.Message }.ShowDialogAsync();
             }
             finally

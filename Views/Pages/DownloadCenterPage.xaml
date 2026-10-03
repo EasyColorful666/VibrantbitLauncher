@@ -1,0 +1,203 @@
+<Page
+    x:Class="VibrantbitLauncher.Views.Pages.DownloadCenterPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:VibrantbitLauncher.ViewModels.Pages"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="clr-namespace:VibrantbitLauncher.Models"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="DownloadCenterPage"
+    d:DataContext="{d:DesignInstance Type=local:DownloadCenterViewModel}"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    mc:Ignorable="d">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock
+                    FontFamily="HarmonyOS Sans Black"
+                    FontSize="32"
+                    Text="下载任务中心"
+                    VerticalAlignment="Center" />
+                <ui:Button
+                    Margin="20,0,0,0"
+                    Command="{Binding GoToVersionDownloadCommand}"
+                    Content="下载游戏版本"
+                    Icon="{ui:SymbolIcon Symbol=Globe24}"
+                    Appearance="Secondary" />
+                <ui:Button
+                    Margin="8,0,0,0"
+                    Command="{Binding GoToModDownloadCommand}"
+                    Content="下载模组资源"
+                    Icon="{ui:SymbolIcon Symbol=Apps24}"
+                    Appearance="Secondary" />
+            </StackPanel>
+            <ui:Button
+                HorizontalAlignment="Right"
+                Command="{Binding ClearCompletedCommand}"
+                Content="清空已完成"
+                Icon="{ui:SymbolIcon Symbol=Delete24}"
+                Appearance="Secondary" />
+        </Grid>
+
+        <!-- 空状态提示 -->
+        <TextBlock
+            Grid.Row="2"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            FontSize="16"
+            Foreground="Gray"
+            Text="暂无下载任务">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Tasks.Count}" Value="0">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+
+        <ListBox
+            Grid.Row="2"
+            Margin="0,12,0,0"
+            BorderThickness="0"
+            Background="Transparent"
+            ItemsSource="{Binding Tasks}"
+            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+            ScrollViewer.VerticalScrollBarVisibility="Auto">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="Margin" Value="0,0,0,8" />
+                    <Setter Property="Padding" Value="0" />
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListBoxItem">
+                                <ContentPresenter />
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="{x:Type models:DownloadTaskItem}">
+                    <Border
+                        Padding="16,12"
+                        Background="{DynamicResource CardBackground}"
+                        BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <Border
+                                        Padding="6,2"
+                                        Background="#1A0078D4"
+                                        CornerRadius="4">
+                                        <TextBlock
+                                            FontSize="11"
+                                            Foreground="#FF0078D4"
+                                            Text="{Binding TypeDisplay}" />
+                                    </Border>
+                                    <TextBlock
+                                        Margin="8,0,0,0"
+                                        FontSize="16"
+                                        FontWeight="Bold"
+                                        Text="{Binding Name}"
+                                        TextTrimming="CharacterEllipsis"
+                                        VerticalAlignment="Center" />
+                                </StackPanel>
+
+                                <ProgressBar
+                                    Margin="0,10,16,4"
+                                    Height="6"
+                                    Minimum="0"
+                                    Maximum="100"
+                                    Value="{Binding Progress}" />
+
+                                <Grid Margin="0,2,16,0">
+                                    <TextBlock
+                                        FontSize="12"
+                                        Foreground="Gray"
+                                        Text="{Binding StatusText}" />
+                                    <StackPanel
+                                        HorizontalAlignment="Right"
+                                        Orientation="Horizontal">
+                                        <TextBlock
+                                            FontSize="12"
+                                            Foreground="Gray"
+                                            Text="{Binding Progress, StringFormat='{}{0}%'}" />
+                                        <TextBlock
+                                            Margin="12,0,0,0"
+                                            FontSize="12"
+                                            Foreground="Gray"
+                                            Text="{Binding Speed}" />
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- 状态按钮 -->
+                            <StackPanel
+                                Grid.Column="1"
+                                VerticalAlignment="Top"
+                                Orientation="Horizontal">
+                                <ui:Button
+                                    Width="32"
+                                    Height="32"
+                                    Margin="0,0,8,0"
+                                    Command="{Binding DataContext.ViewDetailCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                    CommandParameter="{Binding}"
+                                    Appearance="Secondary"
+                                    Icon="{ui:SymbolIcon Symbol=ChevronRight24}">
+                                    <ui:Button.Style>
+                                        <Style TargetType="ui:Button">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ui:Button.Style>
+                                </ui:Button>
+                                <ui:Button
+                                    Width="32"
+                                    Height="32"
+                                    Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                    CommandParameter="{Binding}"
+                                    Appearance="Secondary"
+                                    Icon="{ui:SymbolIcon Symbol=Dismiss24}">
+                                    <ui:Button.Style>
+                                        <Style TargetType="ui:Button">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ui:Button.Style>
+                                </ui:Button>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+</Page>

@@ -1,6 +1,7 @@
-﻿using VibrantbitLauncher.Models;
+using VibrantbitLauncher.Models;
 using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.CommandWpf;
+using System;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
@@ -24,17 +25,21 @@ namespace VibrantbitLauncher.ViewModels.Windows
         }
         public MainWindowViewModel(INavigationService navigationService)
         {
-            imagePath = @"\Assets\Blank.jpg"; // 设置默认图片路径
+            imagePath = @"\Assets\Blank.jpg";
             _navigationService = navigationService;
 
-            // 初始化命令
             ShowMainWindowCommand = new RelayCommand(ShowMainWindow);
             OpenSettingsCommand = new RelayCommand(OpenSettings);
             ApplicationExitCommand = new RelayCommand(ApplicationExit);
 
             Messenger.Default.Register<string>(this, "UpdateImagePath", UpdateImagePath);
-            // 初始化菜单项
+            Messenger.Default.Register<Type>(this, "NavigateTo", NavigateToPage);
             InitializeMenuItems();
+        }
+
+        private void NavigateToPage(Type pageType)
+        {
+            _navigationService.Navigate(pageType);
         }
 
         private void UpdateImagePath(string obj)
@@ -61,10 +66,6 @@ namespace VibrantbitLauncher.ViewModels.Windows
         #region 私有方法
         private void InitializeMenuItems()
         {
-            
-
-
-            // 系统托盘菜单项（使用 ViewModel 替代直接创建 UI 控件）
             TrayMenuItems = new ObservableCollection<MenuItemViewModel>
             {
                 new MenuItemViewModel { Header = "Home", Command = ShowMainWindowCommand },
@@ -92,9 +93,6 @@ namespace VibrantbitLauncher.ViewModels.Windows
         #endregion
     }
 
-    /// <summary>
-    /// 托盘菜单项 ViewModel（纯数据对象）
-    /// </summary>
     public class MenuItemViewModel : ViewModelBase
     {
         public string Header { get; set; }

@@ -116,6 +116,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
                 if (Set(ref _selectedJava, value) && value != null)
                 {
                     MainWindowViewModel.MainModel.JavaPath = value.JavaPath;
+                    MainWindowViewModel.MainModel.Java = value;
                     SettingsService.Current.JavaPath = value.JavaPath;
                     SettingsService.Save();
                 }

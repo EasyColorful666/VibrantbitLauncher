@@ -33,41 +33,42 @@ namespace VibrantbitLauncher.Views.Pages
         public MultiplayerPage()
         {
             InitializeComponent();
-            this.DataContext = new MultiplayerPageViewModel();
-            r1.IsChecked = true;
-            this.snackbarService.SetSnackbarPresenter(SnackbarPresenter);
-            this.Loaded += (s, e) =>
-            {
-                DirectoryInfo directoryInfo = new DirectoryInfo("./VBL/");
-                if (!directoryInfo.Exists)
-                {
-                    System.IO.Directory.CreateDirectory("./VBL/");
-                }
-                if (!System.IO.File.Exists("./VBL/easytier-windows-x86_64/easytier-core.exe"))
-                {
-                    snackbarService.Show("未找到 EasyTier 核心文件，请确保已正确安装 EasyTier", "错误", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
-                    new InstallEasyTierWindow().ShowDialog();
-                }
-            };
-            textBox1.Text = uid;
+            //this.DataContext = new MultiplayerPageViewModel();
+            //r1.IsChecked = true;
+            //this.snackbarService.SetSnackbarPresenter(SnackbarPresenter);
+            //this.Loaded += (s, e) =>
+            //{
+            //    DirectoryInfo directoryInfo = new DirectoryInfo("./VBL/");
+            //    if (!directoryInfo.Exists)
+            //    {
+            //        System.IO.Directory.CreateDirectory("./VBL/");
+            //    }
+            //    if (!System.IO.File.Exists("./VBL/easytier-windows-x86_64/easytier-core.exe"))
+            //    {
+            //        snackbarService.Show("未找到 EasyTier 核心文件，请确保已正确安装 EasyTier", "错误", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
+            //        new InstallEasyTierWindow().ShowDialog();
+            //    }
+            //};
+            //textBox1.Text = uid;
         }
         private void button_Click(object sender, RoutedEventArgs e)
-        {
-            if (!System.IO.File.Exists("./VBL/easytier-windows-x86_64/easytier-core.exe"))
-            {
-                snackbarService.Show("未找到 EasyTier 核心文件，请确保已正确安装 EasyTier", "错误", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
-                new InstallEasyTierWindow().ShowDialog();
-                return;
-            }
-            Process p = new();
-            ProcessStartInfo processStartInfo = new ProcessStartInfo();
-            processStartInfo.FileName = "./VBL/easytier-windows-x86_64/easytier-core.exe";
-            processStartInfo.Arguments = $" --network-name {uid} --network-secret {uid} -p tcp://easytier.weiai.org.cn:11010";
-            processStartInfo.UseShellExecute = false;
+        { 
+        
+        //    if (!System.IO.File.Exists("./VBL/easytier-windows-x86_64/easytier-core.exe"))
+        //    {
+        //        snackbarService.Show("未找到 EasyTier 核心文件，请确保已正确安装 EasyTier", "错误", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
+        //        new InstallEasyTierWindow().ShowDialog();
+        //        return;
+        //    }
+        //    Process p = new();
+        //    ProcessStartInfo processStartInfo = new ProcessStartInfo();
+        //    processStartInfo.FileName = "./VBL/easytier-windows-x86_64/easytier-core.exe";
+        //    processStartInfo.Arguments = $" --network-name {uid} --network-secret {uid} -p tcp://easytier.weiai.org.cn:11010";
+        //    processStartInfo.UseShellExecute = false;
             //processStartInfo.RedirectStandardOutput = true;
 
-            p = Process.Start(processStartInfo);
-            snackbarService.Show("提示", "EasyTier 启动成功",ControlAppearance.Success,null,snackbarService.DefaultTimeOut);
+            //p = Process.Start(processStartInfo);
+            //snackbarService.Show("提示", "EasyTier 启动成功",ControlAppearance.Success,null,snackbarService.DefaultTimeOut);
             //p.BeginOutputReadLine();
             //p.BeginErrorReadLine();
             //p.OutputDataReceived += new DataReceivedEventHandler((sender, e) =>
@@ -94,48 +95,48 @@ namespace VibrantbitLauncher.Views.Pages
 
         private void button1_Click(object sender, RoutedEventArgs e)
         {
-            // 按进程名获取并结束
-            Process[] processes = Process.GetProcessesByName("easytier-core.exe");
-            foreach (Process p in processes)
-            {
-                p.Kill(); // 强制结束
-                snackbarService.Show("提示", "EasyTier 已关闭", ControlAppearance.Info, null, snackbarService.DefaultTimeOut);
-            }
+            //// 按进程名获取并结束
+            //Process[] processes = Process.GetProcessesByName("easytier-core.exe");
+            //foreach (Process p in processes)
+            //{
+            //    p.Kill(); // 强制结束
+            //    snackbarService.Show("提示", "EasyTier 已关闭", ControlAppearance.Info, null, snackbarService.DefaultTimeOut);
+            //}
             
         }
 
         private void button2_Click(object sender, RoutedEventArgs e)
         {
-            if (!System.IO.File.Exists("./VBL/easytier-windows-x86_64/easytier-core.exe"))
-            {
-                snackbarService.Show("未找到 EasyTier 核心文件，请确保已正确安装 EasyTier", "错误", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
-                new InstallEasyTierWindow().ShowDialog();
-                return;
-            }
-            Process p = new();
-            ProcessStartInfo processStartInfo = new ProcessStartInfo();
-            processStartInfo.FileName = "./VBL/easytier-windows-x86_64/easytier-core.exe";
-            processStartInfo.Arguments = $" --network-name {textBox3.Text} --network-secret {textBox3.Text} -p tcp://easytier.weiai.org.cn:11010";
-            processStartInfo.UseShellExecute = false;
-            processStartInfo.RedirectStandardError = true;
-            processStartInfo.RedirectStandardOutput = true;
-            processStartInfo.CreateNoWindow = true;
-            p = Process.Start(processStartInfo);
-            snackbarService.Show("提示", "EasyTier 启动成功", ControlAppearance.Success, null, snackbarService.DefaultTimeOut);
-            p.BeginOutputReadLine();
-            p.BeginErrorReadLine();
+            //if (!System.IO.File.Exists("./VBL/easytier-windows-x86_64/easytier-core.exe"))
+            //{
+            //    snackbarService.Show("未找到 EasyTier 核心文件，请确保已正确安装 EasyTier", "错误", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
+            //    new InstallEasyTierWindow().ShowDialog();
+            //    return;
+            //}
+            //Process p = new();
+            //ProcessStartInfo processStartInfo = new ProcessStartInfo();
+            //processStartInfo.FileName = "./VBL/easytier-windows-x86_64/easytier-core.exe";
+            //processStartInfo.Arguments = $" --network-name {textBox3.Text} --network-secret {textBox3.Text} -p tcp://easytier.weiai.org.cn:11010";
+            //processStartInfo.UseShellExecute = false;
+            //processStartInfo.RedirectStandardError = true;
+            //processStartInfo.RedirectStandardOutput = true;
+            //processStartInfo.CreateNoWindow = true;
+            //p = Process.Start(processStartInfo);
+            //snackbarService.Show("提示", "EasyTier 启动成功", ControlAppearance.Success, null, snackbarService.DefaultTimeOut);
+            //p.BeginOutputReadLine();
+            //p.BeginErrorReadLine();
         }
 
         private void RadioButton_Checked(object sender, RoutedEventArgs e)
         {
-            grid1.IsEnabled = true;
-            grid2.IsEnabled = false;
+            //grid1.IsEnabled = true;
+            //grid2.IsEnabled = false;
         }
 
         private void RadioButton_Checked_1(object sender, RoutedEventArgs e)
         {
-            grid1.IsEnabled = false;
-            grid2.IsEnabled = true;
+            //grid1.IsEnabled = false;
+            //grid2.IsEnabled = true;
         }
     }
 }

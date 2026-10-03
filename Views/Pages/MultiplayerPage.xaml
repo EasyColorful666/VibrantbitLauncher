@@ -11,8 +11,8 @@
     d:DesignWidth="800"
     mc:Ignorable="d">
 
-    <Grid>
-        <ui:SnackbarPresenter x:Name="SnackbarPresenter" />
+    <Grid IsEnabled="False">
+        <ui:SnackbarPresenter x:Name="SnackbarPresenter" IsEnabled="False" />
         <GroupBox Margin="0,0,112,225">
             <GroupBox.Header>
                 <RadioButton
@@ -136,5 +136,13 @@
                     TextWrapping="Wrap" />
             </Grid>
         </GroupBox>
+        <TextBlock
+            Margin="275,0,0,0"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Center"
+            FontFamily="HarmonyOS Sans Black"
+            FontSize="48"
+            Text="敬请期待..."
+            TextWrapping="Wrap" />
     </Grid>
 </Page>

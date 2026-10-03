@@ -11,19 +11,6 @@
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d">
-    <Page.DataContext>
-        <local:RunPageViewModel />
-    </Page.DataContext>
-
-    <i:Interaction.Triggers>
-
-        <i:EventTrigger EventName="Loaded">
-
-            <i:InvokeCommandAction Command="{Binding LoadCommand}" CommandParameter="{Binding ElementName=SnackbarPresenter}" />
-
-        </i:EventTrigger>
-
-    </i:Interaction.Triggers>
     <Grid>
         <ListBox
             x:Name="listBox"

@@ -52,6 +52,10 @@ namespace VibrantbitLauncher
                 services.AddSingleton<AccountPageViewModel>();
                 services.AddSingleton<DownloadPage>();
                 services.AddSingleton<DownloadPageViewModel>();
+                services.AddSingleton<DownloadHubPage>();
+                services.AddSingleton<DownloadCenterPage>();
+                services.AddSingleton<DownloadCenterViewModel>();
+                services.AddSingleton<DownloadTaskService>();
                 services.AddSingleton<DownloadResourcesPage>();
                 services.AddSingleton<DownloadResourcesViewModel>();
                 services.AddSingleton<ModPage>();
@@ -61,6 +65,8 @@ namespace VibrantbitLauncher
                 services.AddSingleton<InstallPageViewModel>();
                 services.AddSingleton<RunPage>();
                 services.AddSingleton<RunPageViewModel>();
+                services.AddSingleton<VersionManagePage>();
+                services.AddSingleton<VersionManageViewModel>();
                 services.AddSingleton<SettingsPage>();
                 services.AddSingleton<SettingsPageViewModel>();
             }).Build();
@@ -92,6 +98,25 @@ namespace VibrantbitLauncher
                 settings.IsEnableFragment = false; // 是否启用分片下载
             });
 
+            // 修复所有版本 JSON 中 releaseTime 的时区格式（+0000 → +00:00）
+            FixVersionJsonDateTimeFormat(SettingsService.Current.MinecraftFolder);
+
+            // 首次运行显示欢迎窗口
+            if (SettingsService.Current.IsFirstRun)
+            {
+                var mainWindow = Current.Windows.OfType<MainWindow>().FirstOrDefault();
+                mainWindow?.Hide();
+
+                var welcome = new WelcomeWindow();
+                welcome.ShowDialog();
+
+                SettingsService.Current.IsFirstRun = false;
+                SettingsService.Save();
+
+                mainWindow?.Show();
+                mainWindow?.Activate();
+            }
+
 
         }
 
@@ -110,13 +135,46 @@ namespace VibrantbitLauncher
         /// </summary>
         private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            // For more info see https://docs.microsoft.com/en-us/dotnet/api/system.windows.application.dispatcherunhandledexception?view=windowsdesktop-6.0
+            System.Diagnostics.Debug.WriteLine($"[Unhandled] {e.Exception}");
+            e.Handled = true;
         }
-        
 
-            
-       
+        /// <summary>
+        /// 扫描 .minecraft/versions 下所有 JSON，将 releaseTime 等字段的 +HHMM 时区格式修正为 +HH:MM
+        /// </summary>
+        private static void FixVersionJsonDateTimeFormat(string mcFolder)
+        {
+            try
+            {
+                var versionsDir = Path.Combine(mcFolder, "versions");
+                if (!Directory.Exists(versionsDir)) return;
 
+                var regex = new System.Text.RegularExpressions.Regex(@"([+-]\d{2})(\d{2})""");
+                int fixedCount = 0;
 
+                foreach (var dir in Directory.GetDirectories(versionsDir))
+                {
+                    var dirName = Path.GetFileName(dir);
+                    var jsonPath = Path.Combine(dir, dirName + ".json");
+                    if (!File.Exists(jsonPath)) continue;
+
+                    var text = File.ReadAllText(jsonPath);
+                    if (regex.IsMatch(text))
+                    {
+                        var fixedText = regex.Replace(text, "$1:$2\"");
+                        File.WriteAllText(jsonPath, fixedText);
+                        fixedCount++;
+                        System.Diagnostics.Debug.WriteLine($"[App] Fixed DateTime format in {jsonPath}");
+                    }
+                }
+
+                if (fixedCount > 0)
+                    System.Diagnostics.Debug.WriteLine($"[App] Fixed {fixedCount} version JSON files");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[App] FixVersionJsonDateTimeFormat failed: {ex.Message}");
+            }
+        }
     }
 }

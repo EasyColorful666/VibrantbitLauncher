@@ -21,21 +21,25 @@
         <helpers:EnumToBooleanConverter x:Key="EnumToBooleanConverter" />
     </Page.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Disabled">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Visible">
         <StackPanel Margin="20,16,20,16">
 
-            <!-- ===== 外观 ===== -->
-            <TextBlock FontSize="20" FontWeight="Medium" Text="外观" Margin="0,0,0,8" />
+            <!--  ===== 外观 =====  -->
+            <TextBlock
+                Margin="0,0,0,8"
+                FontSize="20"
+                FontWeight="Medium"
+                Text="外观" />
 
-            <TextBlock Text="主题" Margin="0,0,0,4" />
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+            <TextBlock Margin="0,0,0,4" Text="主题" />
+            <StackPanel Margin="0,0,0,16" Orientation="Horizontal">
                 <RadioButton
+                    Margin="0,0,16,0"
                     Command="{Binding ChangeThemeCommand}"
                     CommandParameter="theme_light"
                     Content="亮色"
                     GroupName="themeSelect"
-                    IsChecked="{Binding CurrentTheme, ConverterParameter=Light, Converter={StaticResource EnumToBooleanConverter}, Mode=OneWay}"
-                    Margin="0,0,16,0" />
+                    IsChecked="{Binding CurrentTheme, ConverterParameter=Light, Converter={StaticResource EnumToBooleanConverter}, Mode=OneWay}" />
                 <RadioButton
                     Command="{Binding ChangeThemeCommand}"
                     CommandParameter="theme_dark"
@@ -44,27 +48,31 @@
                     IsChecked="{Binding CurrentTheme, ConverterParameter=Dark, Converter={StaticResource EnumToBooleanConverter}, Mode=OneWay}" />
             </StackPanel>
 
-            <!-- ===== 游戏设置 ===== -->
-            <TextBlock FontSize="20" FontWeight="Medium" Text="游戏设置" Margin="0,0,0,8" />
+            <!--  ===== 游戏设置 =====  -->
+            <TextBlock
+                Margin="0,0,0,8"
+                FontSize="20"
+                FontWeight="Medium"
+                Text="游戏设置" />
 
-            <!-- Minecraft 文件夹 -->
-            <TextBlock Text="Minecraft 文件夹" Margin="0,0,0,4" />
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+            <!--  Minecraft 文件夹  -->
+            <TextBlock Margin="0,0,0,4" Text="Minecraft 文件夹" />
+            <StackPanel Margin="0,0,0,16" Orientation="Horizontal">
                 <ui:TextBox
                     Width="420"
                     IsReadOnly="True"
                     Text="{Binding MinecraftFolder, Mode=OneWay}"
                     ToolTip="{Binding MinecraftFolder}" />
                 <ui:Button
-                    Content="选择"
                     Margin="8,0,0,0"
                     Padding="16,0"
-                    Click="OnSelectMinecraftFolder" />
+                    Click="OnSelectMinecraftFolder"
+                    Content="选择" />
             </StackPanel>
 
-            <!-- Java 选择 -->
-            <TextBlock Text="Java 版本" Margin="0,0,0,4" />
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,24">
+            <!--  Java 选择  -->
+            <TextBlock Margin="0,0,0,4" Text="Java 版本" />
+            <StackPanel Margin="0,0,0,24" Orientation="Horizontal">
                 <ComboBox
                     Width="420"
                     ItemsSource="{Binding JavaEntries}"
@@ -73,27 +81,42 @@
                     <ComboBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{Binding JavaVersion}" FontWeight="SemiBold" />
-                                <TextBlock Text="  -  " Foreground="Gray" />
-                                <TextBlock Text="{Binding JavaPath}" Foreground="Gray" FontSize="11" />
+                                <TextBlock FontWeight="SemiBold" Text="{Binding JavaVersion}" />
+                                <TextBlock Foreground="Gray" Text="  -  " />
+                                <TextBlock
+                                    FontSize="11"
+                                    Foreground="Gray"
+                                    Text="{Binding JavaPath}" />
                             </StackPanel>
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
                 <ui:Button
-                    Content="刷新"
                     Margin="8,0,0,0"
                     Padding="16,0"
-                    Command="{Binding RefreshJavaCommand}" />
+                    Command="{Binding RefreshJavaCommand}"
+                    Content="刷新" />
             </StackPanel>
 
-            <!-- ===== 关于 ===== -->
-            <TextBlock FontSize="20" FontWeight="Medium" Text="关于 VibrantbitLauncher" Margin="0,0,0,8" />
-            <TextBlock TextWrapping="Wrap" Foreground="Gray">
+            <!--  ===== 关于 =====  -->
+            <TextBlock
+                Margin="0,0,0,8"
+                FontSize="20"
+                FontWeight="Medium"
+                Text="关于 VibrantbitLauncher" />
+            <TextBlock Foreground="Gray" TextWrapping="Wrap">
                 <Run Text="Colorful craft launcher4 是 colorful craft launcher 的新版，更新了 UI，更新了许多逻辑，修复了 bug，更多功能敬请期待。" />
                 <LineBreak />
                 <Run Text="制作不易，敬请谅解！" />
             </TextBlock>
+            <TextBlock
+                Height="27"
+                FontSize="20"
+                FontWeight="Medium"><Run Language="zh-cn" Text="致谢" /><LineBreak /><Run Language="zh-cn" /></TextBlock>
+            <TextBlock
+                FontSize="15"
+                Foreground="Gray"
+                TextWrapping="Wrap"><Run Language="zh-cn" Text="欢迎UI借鉴dream-pep" /></TextBlock>
 
         </StackPanel>
     </ScrollViewer>

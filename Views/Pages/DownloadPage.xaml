@@ -11,39 +11,37 @@
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d">
-    <Page.DataContext>
-        <local:DownloadPageViewModel />
-    </Page.DataContext>
-
     <Grid>
+        <Grid.Resources>
+            <BitmapImage
+                x:Key="GrassIcon"
+                DecodePixelWidth="50"
+                UriSource="/Assets/Grass_Block.png"
+                CacheOption="OnLoad" />
+        </Grid.Resources>
         <ui:SnackbarPresenter x:Name="SnackbarPresenter" Margin="0,0,140,0" />
         <ListBox
             x:Name="listBox"
-            Margin="0,37,140,0"
+            Margin="0,37,110,0"
             ScrollViewer.CanContentScroll="True"
             VirtualizingStackPanel.IsVirtualizing="True"
-            VirtualizingStackPanel.VirtualizationMode="Recycling">
+            VirtualizingStackPanel.VirtualizationMode="Recycling"
+            VirtualizingStackPanel.CacheLength="20,0"
+            VirtualizingStackPanel.CacheLengthUnit="Item">
             <ListBox.Background>
                 <SolidColorBrush Color="LightGray" />
             </ListBox.Background>
-            <ListBox.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <VirtualizingStackPanel />
-                </ItemsPanelTemplate>
-            </ListBox.ItemsPanel>
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Margin="5" Orientation="Horizontal">
-                        <!--  图片绑定  -->
                         <Image
                             Width="50"
                             Height="50"
                             Margin="0,0,10,0"
-                            Source="/Assets/Grass_Block.png" />
-                        <!--  文本信息  -->
+                            Source="{StaticResource GrassIcon}" />
                         <StackPanel Width="200">
                             <TextBlock FontWeight="Bold" Text="{Binding Version}" />
-                            <TextBlock Foreground="Green" Text="{Binding Date, StringFormat=C}" />
+                            <TextBlock Foreground="Green" Text="{Binding Date}" />
                         </StackPanel>
                         <Button
                             Width="100"
@@ -53,8 +51,6 @@
                             CommandParameter="{Binding Version}"
                             Content="下载" />
                     </StackPanel>
-
-
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>

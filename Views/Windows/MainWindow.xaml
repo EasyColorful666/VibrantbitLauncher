@@ -49,13 +49,13 @@
                     Icon="{ui:SymbolIcon Symbol=Person24}"
                     TargetPageType="{x:Type pages:AccountPage}" />
                 <ui:NavigationViewItem
-                    Content="下载 "
+                    Content="下载中心"
                     Icon="{ui:SymbolIcon Symbol=ArrowCircleDown24}"
-                    TargetPageType="{x:Type pages:DownloadPage}" />
+                    TargetPageType="{x:Type pages:DownloadHubPage}" />
                 <ui:NavigationViewItem
-                    Content="模组 "
-                    Icon="{ui:SymbolIcon Symbol=Apps24}"
-                    TargetPageType="{x:Type pages:DownloadResourcesPage}" />
+                    Content="下载任务"
+                    Icon="{ui:SymbolIcon Symbol=History24}"
+                    TargetPageType="{x:Type pages:DownloadCenterPage}" />
                 <ui:NavigationViewItem
                     Content="运行"
                     Icon="{ui:SymbolIcon Symbol=TriangleRight20}"

@@ -1,4 +1,4 @@
-using GalaSoft.MvvmLight;
+﻿using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.CommandWpf;
 using GalaSoft.MvvmLight.Messaging;
 using MinecraftLaunch.Base.Models.Authentication;
@@ -86,23 +86,41 @@ namespace VibrantbitLauncher.ViewModels.Pages
             foreach (var saved in SettingsService.Current.OfflineAccounts)
             {
                 if (string.IsNullOrEmpty(saved.Name)) continue;
-                AddAccountToList(saved, "Offline", "/Assets/gravatar.png");
+                AddAccountToList(saved, "Offline", ResolveAvatarPath(null));
                 AutoSelectIfSaved(saved, saved.Uuid.ToString());
             }
 
             // 微软账户：直接使用保存的 MicrosoftAccount 对象
             foreach (var saved in SettingsService.Current.MicrosoftAccounts)
             {
-                AddAccountToList(saved, "Microsoft", ".\\res\\skin.png");
+                AddAccountToList(saved, "Microsoft", ResolveAvatarPath(saved.Uuid.ToString()));
                 AutoSelectIfSaved(saved, saved.Uuid.ToString());
             }
 
             // Yggdrasil 账户：直接使用保存的 YggdrasilAccount 对象
             foreach (var saved in SettingsService.Current.YggdrasilAccounts)
             {
-                AddAccountToList(saved, "Yggdrasil", ".\\res\\skin.png");
+                AddAccountToList(saved, "Yggdrasil", ResolveAvatarPath(saved.Uuid.ToString()));
                 AutoSelectIfSaved(saved, saved.Uuid.ToString());
             }
+        }
+
+        /// <summary>
+        /// 解析头像路径：优先使用按 UUID 保存的皮肤文件，不存在则回退到默认头像。
+        /// </summary>
+        private static string ResolveAvatarPath(string? uuid)
+        {
+            var defaultAvatar = "/Assets/gravatar.png";
+            if (string.IsNullOrEmpty(uuid)) return defaultAvatar;
+
+            var skinPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "res", $"{uuid}.png"));
+            if (File.Exists(skinPath)) return skinPath;
+
+            // 兼容旧路径 .\res\skin.png
+            var legacyPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "res", "skin.png"));
+            if (File.Exists(legacyPath)) return legacyPath;
+
+            return defaultAvatar;
         }
 
         private void AddAccountToList(Account account, string type, string imagePath)
@@ -126,6 +144,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
             {
                 selectedAccount = account;
                 MainWindowViewModel.MainModel.Account = account;
+                MainWindowViewModel.MainModel.IsMicrosoftAccount = account is MicrosoftAccount;
             }
         }
 
@@ -208,18 +227,15 @@ namespace VibrantbitLauncher.ViewModels.Pages
                 await skinStream.CopyToAsync(ms, cts.Token);
                 var skinBytes = ms.ToArray();
                 var skin = new MinecraftLaunch.Skin.SkinResolver(skinBytes);
-                if (Directory.Exists(".\\res"))
-                    skin.CropSkinHeadBitmap().SaveAsPng(".\\res\\skin.png");
-                else
-                {
-                    Directory.CreateDirectory(".\\res");
-                    skin.CropSkinHeadBitmap().SaveAsPng(".\\res\\skin.png");
-                }
+                var resDir = Path.Combine(AppContext.BaseDirectory, "res");
+                if (!Directory.Exists(resDir)) Directory.CreateDirectory(resDir);
+                var skinPath = Path.Combine(resDir, $"{userProfile.Uuid}.png");
+                skin.CropSkinHeadBitmap().SaveAsPng(skinPath);
                 App.Current.Dispatcher.Invoke(() =>
                 {
                     userNames.Add(userProfile.Name);
                     accounts.Add(userProfile);
-                    users.Add(new User { Name = userProfile.Name, Account = userProfile, AccountType = "Microsoft", SelectedCommand = new RelayCommand<Account>(Selected), DeleteCommand = new RelayCommand<Account>(DeleteAccount), ImagePath = ".\\res\\skin.png" });
+                    users.Add(new User { Name = userProfile.Name, Account = userProfile, AccountType = "Microsoft", SelectedCommand = new RelayCommand<Account>(Selected), DeleteCommand = new RelayCommand<Account>(DeleteAccount), ImagePath = skinPath });
                     SettingsService.SaveMicrosoftAccount(userProfile);
                 });
             }
@@ -253,17 +269,15 @@ namespace VibrantbitLauncher.ViewModels.Pages
                     await skinStream.CopyToAsync(ms, cts.Token);
                     var skinBytes = ms.ToArray();
                     var skin = new MinecraftLaunch.Skin.SkinResolver(skinBytes);
-                    if (!Directory.Exists(".\\res"))
-                        skin.CropSkinHeadBitmap().SaveAsPng(".\\res\\skin.png");
-                    else
-                    {
-                        Directory.CreateDirectory(".\\res");
-                    }
+                    var resDir = Path.Combine(AppContext.BaseDirectory, "res");
+                    if (!Directory.Exists(resDir)) Directory.CreateDirectory(resDir);
+                    var skinPath = Path.Combine(resDir, $"{account.Uuid}.png");
+                    skin.CropSkinHeadBitmap().SaveAsPng(skinPath);
                     App.Current.Dispatcher.Invoke(() =>
                     {
                         userNames.Add(account.Name);
                         accounts.Add(account);
-                        users.Add(new User { Name = account.Name, Account = account, AccountType = "Yggdrasil", SelectedCommand = new RelayCommand<Account>(Selected), DeleteCommand = new RelayCommand<Account>(DeleteAccount), ImagePath = ".\\res\\skin.png" });
+                        users.Add(new User { Name = account.Name, Account = account, AccountType = "Yggdrasil", SelectedCommand = new RelayCommand<Account>(Selected), DeleteCommand = new RelayCommand<Account>(DeleteAccount), ImagePath = skinPath });
                         SettingsService.SaveYggdrasilAccount(account);
                     });
                 }
@@ -297,6 +311,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
         {
             selectedAccount = account;
             MainWindowViewModel.MainModel.Account = account;
+            MainWindowViewModel.MainModel.IsMicrosoftAccount = account is MicrosoftAccount;
             SettingsService.SetSelectedAccount(GetAccountUuid(account));
         }
 
@@ -320,6 +335,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
             {
                 selectedAccount = null;
                 MainWindowViewModel.MainModel.Account = null;
+                MainWindowViewModel.MainModel.IsMicrosoftAccount = false;
                 SettingsService.SetSelectedAccount(string.Empty);
             }
         }

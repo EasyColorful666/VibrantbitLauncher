@@ -26,6 +26,8 @@ namespace VibrantbitLauncher.Services
         public List<YggdrasilAccount> YggdrasilAccounts { get; set; } = new();
         public List<OfflineAccount> OfflineAccounts { get; set; } = new();
         public string SelectedAccountUuid { get; set; } = string.Empty;
+        public bool IsMicrosoftAccount { get; set; }
+        public bool IsFirstRun { get; set; } = true;
     }
 
     /// <summary>
@@ -63,6 +65,7 @@ namespace VibrantbitLauncher.Services
 
             MainWindowViewModel.MainModel.MinecraftFolder = Current.MinecraftFolder;
             MainWindowViewModel.MainModel.JavaPath = string.IsNullOrEmpty(Current.JavaPath) ? null : Current.JavaPath;
+            MainWindowViewModel.MainModel.IsMicrosoftAccount = Current.IsMicrosoftAccount;
         }
 
         public static void Save()
@@ -71,6 +74,7 @@ namespace VibrantbitLauncher.Services
             {
                 Current.MinecraftFolder = MainWindowViewModel.MainModel.MinecraftFolder ?? "./.minecraft";
                 Current.JavaPath = MainWindowViewModel.MainModel.JavaPath ?? string.Empty;
+                Current.IsMicrosoftAccount = MainWindowViewModel.MainModel.IsMicrosoftAccount;
 
                 var json = JsonSerializer.Serialize(Current, JsonOptions);
                 File.WriteAllText(ConfigPath, json);

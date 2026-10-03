@@ -6,11 +6,14 @@ using MinecraftLaunch.Base.Models.Network;
 using MinecraftLaunch.Components.Installer;
 using MinecraftLaunch.Utilities;
 using System;
+using System.IO;
+using System.Net.Http;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Media;
 using VibrantbitLauncher.Models;
+using VibrantbitLauncher.Services;
 using VibrantbitLauncher.ViewModels.Windows;
 using VibrantbitLauncher.Views.Windows;
 using Wpf.Ui;
@@ -25,11 +28,11 @@ namespace VibrantbitLauncher.ViewModels.Pages
         private string mcFolder = "./.minecraft";
         private List<string> forgeVersions = new();
         private List<string> fabricVersions = new();
-        private List<string> optfineVersions = new();
+        private List<string> neoforgeVersions = new();
         private List<string> quiltVersions = new();
         private string selectForgeVersion = string.Empty;
         private string selectFabricVersion = string.Empty;
-        private string selectOptifineVersion = string.Empty;
+        private string selectNeoforgeVersion = string.Empty;
         private string selectQuiltVersion = string.Empty;
         private int installProgress = 0;
         private string installStep = string.Empty;
@@ -51,10 +54,10 @@ namespace VibrantbitLauncher.ViewModels.Pages
             get => fabricVersions;
             set => Set(ref fabricVersions, value);
         }
-        public List<string> OptfineVersions
+        public List<string> NeoforgeVersions
         {
-            get => optfineVersions;
-            set => Set(ref optfineVersions, value);
+            get => neoforgeVersions;
+            set => Set(ref neoforgeVersions, value);
         }
         public List<string> QuiltVersions
         {
@@ -76,10 +79,10 @@ namespace VibrantbitLauncher.ViewModels.Pages
             get => selectFabricVersion;
             set => Set(ref selectFabricVersion, value);
         }
-        public string SelectOptifineVersion
+        public string SelectNeoforgeVersion
         {
-            get => selectOptifineVersion;
-            set => Set(ref selectOptifineVersion, value);
+            get => selectNeoforgeVersion;
+            set => Set(ref selectNeoforgeVersion, value);
         }
         public string SelectQuiltVersion
         {
@@ -107,20 +110,33 @@ namespace VibrantbitLauncher.ViewModels.Pages
             set
             {
                 Set(ref isLoading, value);
+                RaisePropertyChanged(nameof(CanInstall));
                 InstallCommand?.RaiseCanExecuteChanged();
             }
         }
         public bool CanInstall => !IsLoading;
+        public bool CanRefresh => !IsLoading;
+
+        private bool forgeAvailable = true;
+        private bool fabricAvailable = true;
+        private bool neoforgeAvailable = true;
+        private bool quiltAvailable = true;
+
+        public bool ForgeAvailable { get => forgeAvailable; set => Set(ref forgeAvailable, value); }
+        public bool FabricAvailable { get => fabricAvailable; set => Set(ref fabricAvailable, value); }
+        public bool NeoforgeAvailable { get => neoforgeAvailable; set => Set(ref neoforgeAvailable, value); }
+        public bool QuiltAvailable { get => quiltAvailable; set => Set(ref quiltAvailable, value); }
 
         public InstallPageViewModel(string McVersion)
         {
             this.mcVersion = McVersion;
+            this.mcFolder = Path.GetFullPath(SettingsService.Current.MinecraftFolder ?? "./.minecraft");
             InstallCommand = new RelayCommand(async () => await InstallAsync(), () => CanInstall);
-            RefreshCommand = new RelayCommand(async () => await LoadVersionsAsync());
+            RefreshCommand = new RelayCommand(async () => await LoadVersionsAsync(), () => CanRefresh);
             LoadCommand = new RelayCommand<SnackbarPresenter>(async (presenter) => await Load(presenter));
         }
 
-        private async Task Load(SnackbarPresenter snackbarPresenter)
+        public async Task Load(SnackbarPresenter snackbarPresenter)
         {
             this.snackbarService.SetSnackbarPresenter(snackbarPresenter);
             await LoadVersionsAsync();
@@ -131,27 +147,37 @@ namespace VibrantbitLauncher.ViewModels.Pages
             IsLoading = true;
             try
             {
-                ForgeVersions = new List<string>();
-                FabricVersions = new List<string>();
-                OptfineVersions = new List<string>();
-                QuiltVersions = new List<string>();
+                ForgeAvailable = FabricAvailable = NeoforgeAvailable = QuiltAvailable = true;
+                var errors = new List<string>();
 
-                // 并行加载所有加载器版本，减少总等待时间
-                var forgeTask = Task.Run(async () => (await ForgeInstaller.EnumerableForgeAsync(mcVersion)).Select(x => x.DisplayVersion).ToList());
-                var fabricTask = Task.Run(async () => (await FabricInstaller.EnumerableFabricAsync(mcVersion)).Select(x => x.DisplayVersion).ToList());
-                var optifineTask = Task.Run(async () => (await OptifineInstaller.EnumerableOptifineAsync(mcVersion)).Select(x => x.DisplayVersion).ToList());
-                var quiltTask = Task.Run(async () => (await QuiltInstaller.EnumerableQuiltAsync(mcVersion)).Select(x => x.DisplayVersion).ToList());
+                ForgeVersions = await LoadLoaderAsync(
+                    async () => (await ForgeInstaller.EnumerableForgeAsync(mcVersion))
+                        .Where(x => !((dynamic)x).IsNeoforge)
+                        .Select(x => x.DisplayVersion).ToList(),
+                    () => ForgeAvailable = false, errors, "Forge");
 
-                await Task.WhenAll(forgeTask, fabricTask, optifineTask, quiltTask);
+                FabricVersions = await LoadLoaderAsync(
+                    async () => (await FabricInstaller.EnumerableFabricAsync(mcVersion)).Select(x => x.DisplayVersion).ToList(),
+                    () => FabricAvailable = false, errors, "Fabric");
 
-                ForgeVersions = forgeTask.Result;
-                FabricVersions = fabricTask.Result;
-                OptfineVersions = optifineTask.Result;
-                QuiltVersions = quiltTask.Result;
+                NeoforgeVersions = await LoadLoaderAsync(
+                    async () => (await ForgeInstaller.EnumerableForgeAsync(mcVersion))
+                        .Where(x => ((dynamic)x).IsNeoforge)
+                        .Select(x => x.DisplayVersion).ToList(),
+                    () => NeoforgeAvailable = false, errors, "NeoForge");
+
+                QuiltVersions = await LoadLoaderAsync(
+                    async () => (await QuiltInstaller.EnumerableQuiltAsync(mcVersion)).Select(x => x.DisplayVersion).ToList(),
+                    () => QuiltAvailable = false, errors, "Quilt");
+
+                if (errors.Count > 0)
+                {
+                    snackbarService.Show("提示", $"部分加载器列表加载失败：{string.Join("、", errors)}", ControlAppearance.Info, null, snackbarService.DefaultTimeOut);
+                }
             }
             catch (Exception ex)
             {
-                snackbarService.Show("错误", $"加载模组/安装列表失败: {ex.Message}", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
+                System.Diagnostics.Debug.WriteLine($"[InstallPage] LoadVersionsAsync error: {ex}");
             }
             finally
             {
@@ -159,102 +185,209 @@ namespace VibrantbitLauncher.ViewModels.Pages
             }
         }
 
-        public async Task InstallAsync()
+        private async Task<List<string>> LoadLoaderAsync(
+            Func<Task<List<string>>> loadFunc,
+            Action disableAction,
+            List<string> errors,
+            string loaderName)
         {
-            // 异步枚举 Java，不阻塞 UI 线程
-            var javaList = await JavaUtil.EnumerableJavaAsync().ToListAsync();
-            var asyncJavas = javaList.ToList();
-
-            IsLoading = true;
-            string CustomId = "";
-            var installEntries = new List<IInstallEntry>();
             try
             {
-                var vanillas = await VanillaInstaller.EnumerableMinecraftAsync();
-                var vanilla = vanillas.FirstOrDefault(x => x.McVersion == mcVersion);
-                CustomId += McVersion;
-                if (vanilla == null)
-                {
-                    snackbarService.Show("错误", $"未找到原版版本: {McVersion}", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
-                    return;
-                }
-                installEntries.Add(vanilla);
-
-                if (!string.IsNullOrEmpty(SelectForgeVersion))
-                {
-                    var forges = await ForgeInstaller.EnumerableForgeAsync(McVersion);
-                    var forge = forges.FirstOrDefault(x => string.Equals(x.DisplayVersion, SelectForgeVersion, StringComparison.OrdinalIgnoreCase));
-                    CustomId += $"-Forge_{SelectForgeVersion}";
-                    if (forge == null)
-                    {
-                        snackbarService.Show("错误", $"未找到 Forge 版本: {SelectForgeVersion}", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
-                        return;
-                    }
-                    installEntries.Add(forge);
-                }
-
-                if (!string.IsNullOrEmpty(SelectFabricVersion))
-                {
-                    var fabrics = await FabricInstaller.EnumerableFabricAsync(McVersion);
-                    var fabric = fabrics.FirstOrDefault(x => string.Equals(x.DisplayVersion, SelectFabricVersion, StringComparison.OrdinalIgnoreCase));
-                    CustomId += $"-Fabric_{SelectFabricVersion}";
-                    if (fabric == null)
-                    {
-                        snackbarService.Show("错误", $"未找到 Fabric 版本: {SelectFabricVersion}", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
-                        return;
-                    }
-                    installEntries.Add(fabric);
-                }
-
-                if (!string.IsNullOrEmpty(SelectOptifineVersion))
-                {
-                    var optfines = await OptifineInstaller.EnumerableOptifineAsync(McVersion);
-                    var opt = optfines.FirstOrDefault(x => string.Equals(x.DisplayVersion, SelectOptifineVersion, StringComparison.OrdinalIgnoreCase));
-                    CustomId += $"-Optifine_{SelectOptifineVersion}";
-                    if (opt == null)
-                    {
-                        snackbarService.Show("错误", $"未找到 Optifine 版本: {SelectOptifineVersion}", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
-                        return;
-                    }
-                    installEntries.Add(opt);
-                }
-
-                if (!string.IsNullOrEmpty(SelectQuiltVersion))
-                {
-                    var quilts = await QuiltInstaller.EnumerableQuiltAsync(McVersion);
-                    var quilt = quilts.FirstOrDefault(x => string.Equals(x.DisplayVersion, SelectQuiltVersion, StringComparison.OrdinalIgnoreCase));
-                    CustomId += $"-Quilt_{SelectQuiltVersion}";
-                    if (quilt == null)
-                    {
-                        snackbarService.Show("错误", $"未找到 Quilt 版本: {SelectQuiltVersion}", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
-                        return;
-                    }
-                    installEntries.Add(quilt);
-                }
+                return await Task.Run(loadFunc);
+            }
+            catch (Exception ex) when (ex.Message.Contains("404", StringComparison.OrdinalIgnoreCase)
+                || ex.Message.Contains("deserialization", StringComparison.OrdinalIgnoreCase)
+                || ex.Message.Contains("missing required", StringComparison.OrdinalIgnoreCase))
+            {
+                // 加载器不支持该版本（404 或 API 返回格式不兼容），静默置灰
+                disableAction();
+                return new List<string>();
             }
             catch (Exception ex)
             {
-                snackbarService.Show("错误", $"获取安装项失败: {ex.Message}", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
+                errors.Add($"{loaderName}({ex.Message})");
+                return new List<string>();
+            }
+        }
+
+        public async Task InstallAsync()
+        {
+            IsLoading = true;
+            InstallProgress = 0;
+            InstallStep = string.Empty;
+            Speed = string.Empty;
+            var javaList = await JavaUtil.EnumerableJavaAsync().ToListAsync();
+            var asyncJavas = javaList.ToList();
+
+            if (asyncJavas.Count == 0)
+            {
+                snackbarService.Show("错误", "未找到 Java，请先在设置中选择 Java", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
+                IsLoading = false;
                 return;
             }
-            finally
+
+            var taskService = App.Services.GetService(typeof(DownloadTaskService)) as DownloadTaskService;
+
+            // 所有模组加载器都需要原版先安装（FabricInstaller 内部会查找已安装原版）
+            bool hasLoader = !string.IsNullOrEmpty(SelectForgeVersion)
+                || !string.IsNullOrEmpty(SelectFabricVersion)
+                || !string.IsNullOrEmpty(SelectQuiltVersion)
+                || !string.IsNullOrEmpty(SelectNeoforgeVersion);
+
+            if (hasLoader)
             {
-                IsLoading = false;
+                var vanillaJsonPath = Path.Combine(mcFolder, "versions", mcVersion, mcVersion + ".json");
+                if (!File.Exists(vanillaJsonPath))
+                {
+                    App.Current.Dispatcher.Invoke((Action)(() =>
+                        snackbarService.Show("提示", $"正在安装原版 {mcVersion}...", ControlAppearance.Info, null, snackbarService.DefaultTimeOut)));
+                    var vanillas = await VanillaInstaller.EnumerableMinecraftAsync();
+                    var vanillaEntry = vanillas.FirstOrDefault(x => x.McVersion == mcVersion);
+                    if (vanillaEntry == null)
+                    {
+                        snackbarService.Show("错误", $"未找到原版版本: {mcVersion}", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
+                        IsLoading = false; return;
+                    }
+                    var vanillaInstaller = VanillaInstaller.Create(mcFolder, (VersionManifestEntry)vanillaEntry);
+                    var vanillaTask = taskService?.CreateTask($"安装原版 {mcVersion}", DownloadTaskType.GameInstall);
+                    vanillaInstaller.ProgressChanged += (_, arg) =>
+                    {
+                        int p = (int)(arg.Progress * 100);
+                        string s = $"{arg.FinishedStepTaskCount}/{arg.TotalStepTaskCount}";
+                        string sp = arg.IsStepSupportSpeed ? $"{arg.Speed / 1024 / 1024:F1} MB/s" : "N/A";
+                        System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() => { InstallStep = s; InstallProgress = p; Speed = sp; }));
+                        taskService?.UpdateProgress(vanillaTask, p, arg.IsStepSupportSpeed ? $"{arg.Speed / 1024 / 1024:F1} MB/s" : "", s);
+                    };
+                    await vanillaInstaller.InstallAsync();
+                    taskService?.CompleteTask(vanillaTask, $"原版 {mcVersion} 安装完成");
+                }
             }
 
-            snackbarService.Show("提示", $"正在安装版本{McVersion},Forge:{SelectForgeVersion},Fabric:{SelectFabricVersion},Optifine{SelectOptifineVersion},Quilt:{SelectQuiltVersion}", ControlAppearance.Info, null, snackbarService.DefaultTimeOut);
+            // 确定安装器和入口
+            InstallerBase installer = null;
+            IInstallEntry entry;
+            string taskName;
 
-            var installer = CompositeInstaller.Create(installEntries, mcFolder, javaPath: asyncJavas.FirstOrDefault().JavaPath, customId: CustomId);
+            if (!string.IsNullOrEmpty(SelectForgeVersion))
+            {
+                var forges = await ForgeInstaller.EnumerableForgeAsync(mcVersion);
+                entry = forges.FirstOrDefault(x => string.Equals(x.DisplayVersion, SelectForgeVersion, StringComparison.OrdinalIgnoreCase));
+                if (entry == null) { snackbarService.Show("错误", $"未找到 Forge 版本: {SelectForgeVersion}", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut); IsLoading = false; return; }
+                installer = ForgeInstaller.Create(mcFolder,JavaUtil.EnumerableJavaAsync().ToBlockingEnumerable().First().JavaPath, (ForgeInstallEntry)entry, $"{mcVersion}_forge_{SelectForgeVersion}");
+                taskName = $"安装 Forge {SelectForgeVersion}";
+            }
+            else if (!string.IsNullOrEmpty(SelectFabricVersion))
+            {
+                var fabrics = await FabricInstaller.EnumerableFabricAsync(mcVersion);
+                var fabricEntry = fabrics.FirstOrDefault(x => string.Equals(x.DisplayVersion, SelectFabricVersion, StringComparison.OrdinalIgnoreCase));
+                if (fabricEntry == null)
+                {
+                    snackbarService.Show("错误", $"未找到 Fabric 版本: {SelectFabricVersion}", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
+                    IsLoading = false;
+                    return;
+                }
+                // McVersion 是计算属性，返回 Intermediary.Version；直接修正 Intermediary
+                fabricEntry.Intermediary.Version = mcVersion;
+                fabricEntry.Intermediary.Maven = $"net.fabricmc:intermediary:{mcVersion}";
+                installer = FabricInstaller.Create(mcFolder, fabricEntry, $"{mcVersion}_fabric_{SelectFabricVersion}");
+                taskName = $"安装 Fabric {fabricEntry.DisplayVersion}";
+            }
+            else if (!string.IsNullOrEmpty(SelectQuiltVersion))
+            {
+                var quilts = await QuiltInstaller.EnumerableQuiltAsync(mcVersion);
+                entry = quilts.FirstOrDefault(x => string.Equals(x.DisplayVersion, SelectQuiltVersion, StringComparison.OrdinalIgnoreCase));
+                if (entry == null) { snackbarService.Show("错误", $"未找到 Quilt 版本: {SelectQuiltVersion}", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut); IsLoading = false; return; }
+                installer = QuiltInstaller.Create(mcFolder, (QuiltInstallEntry)entry, $"{mcVersion}_quilt_{SelectQuiltVersion}");
+                taskName = $"安装 Quilt {SelectQuiltVersion}";
+            }
+            else if (!string.IsNullOrEmpty(SelectNeoforgeVersion))
+            {
+                var neoforges = (await ForgeInstaller.EnumerableForgeAsync(mcVersion,true)).ToList();
+                entry = neoforges.FirstOrDefault(x => string.Equals(x.DisplayVersion, SelectNeoforgeVersion, StringComparison.OrdinalIgnoreCase));
+                if (entry == null) { snackbarService.Show("错误", $"未找到 NeoForge 版本: {SelectNeoforgeVersion}", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut); IsLoading = false; return; }
+                installer = ForgeInstaller.Create(mcFolder, JavaUtil.EnumerableJavaAsync().ToBlockingEnumerable().First().JavaPath, (ForgeInstallEntry)entry, $"{mcVersion}_neoforge_{SelectNeoforgeVersion}");
+                taskName = $"安装 NeoForge {SelectNeoforgeVersion}";
+            }
+            else
+            {
+                var vanillas = await VanillaInstaller.EnumerableMinecraftAsync();
+                entry = vanillas.FirstOrDefault(x => x.McVersion == mcVersion);
+                if (entry == null) { snackbarService.Show("错误", $"未找到原版版本: {mcVersion}", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut); IsLoading = false; return; }
+                installer = VanillaInstaller.Create(mcFolder, (VersionManifestEntry)entry);
+                taskName = $"安装原版 {mcVersion}";
+            }
+
+            // 设置父原版版本
+            if (installer is not VanillaInstaller)
+            {
+                var parser = new MinecraftParser(mcFolder);
+                var parent = parser.GetMinecraft(mcVersion);
+                if (parent != null)
+                {
+                    installer.GetType().GetProperty("InheritedMinecraft")?.SetValue(installer, parent);
+                }
+            }
+
+            var task = taskService?.CreateTask(taskName, DownloadTaskType.GameInstall);
+
+            // 捕获安装器内部吞掉的真实异常
+            Exception installException = null;
+            var completedEvent = installer.GetType().GetEvent("Completed");
+            if (completedEvent != null)
+            {
+                var argsType = completedEvent.EventHandlerType.GetGenericArguments()[0];
+                void Handler(object s, object e)
+                {
+                    var okProp = argsType.GetProperty("IsSuccessful") ?? argsType.GetProperty("IsSuccess");
+                    bool ok = okProp != null && (bool)okProp.GetValue(e);
+                    if (!ok)
+                    {
+                        var exProp = argsType.GetProperty("Exception") ?? argsType.GetProperty("Error");
+                        if (exProp != null)
+                            installException = exProp.GetValue(e) as Exception;
+                    }
+                }
+                var act = new Action<object, object>(Handler);
+                var del = Delegate.CreateDelegate(completedEvent.EventHandlerType, act.Target, act.Method);
+                completedEvent.AddEventHandler(installer, del);
+            }
+
             installer.ProgressChanged += (_, arg) =>
             {
                 InstallStep = $"{arg.FinishedStepTaskCount}/{arg.TotalStepTaskCount} ";
                 InstallProgress = (int)(arg.Progress * 100);
                 Speed = (arg.IsStepSupportSpeed ? $"{arg.Speed / 1024 / 1024}" : "N/A");
+                taskService?.UpdateProgress(task, InstallProgress,
+                    arg.IsStepSupportSpeed ? $"{arg.Speed / 1024 / 1024:F1} MB/s" : string.Empty,
+                    InstallStep);
             };
+
+            App.Current.Dispatcher.Invoke((Action)(() =>
+                snackbarService.Show("提示", taskName, ControlAppearance.Info, null, snackbarService.DefaultTimeOut)));
 
             try
             {
-                var minecraft = await installer.InstallAsync();
+                MinecraftEntry minecraft;
+
+                if (installer is FabricInstaller)
+                {
+                    // 使用自实现的 FabricDownloader，绕过库的 bug
+                    var customId = $"{mcVersion}_fabric_{SelectFabricVersion}";
+                    minecraft = await FabricDownloader.InstallAsync(
+                        mcFolder, mcVersion, SelectFabricVersion, customId,
+                        (p, s) =>
+                        {
+                            InstallProgress = p;
+                            InstallStep = s;
+                            taskService?.UpdateProgress(task, p, "", s);
+                        });
+                }
+                else
+                {
+                    minecraft = await installer.InstallAsync();
+                }
+
+                taskService?.CompleteTask(task, $"安装完成: {minecraft.Id}");
                 App.Current.Dispatcher.Invoke((Action)(() =>
                 {
                     snackbarService.Show("安装完成", $"安装完成: {minecraft.Id}", ControlAppearance.Success, null, snackbarService.DefaultTimeOut);
@@ -262,16 +395,16 @@ namespace VibrantbitLauncher.ViewModels.Pages
             }
             catch (Exception ex)
             {
+                var realMsg = installException?.Message ?? ex.Message;
+                System.Diagnostics.Debug.WriteLine($"[InstallPage] Install failed: {realMsg}\n{installException}");
+                taskService?.FailTask(task, realMsg);
                 App.Current.Dispatcher.Invoke((Action)(() =>
                 {
-                    snackbarService.Show("错误", $"错误信息: {ex.Message}", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
+                    snackbarService.Show("安装失败", realMsg, ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
                 }));
             }
-            finally
-            {
-                IsLoading = false;
-                InstallCommand?.RaiseCanExecuteChanged();
-            }
+
+            IsLoading = false;
         }
     }
 }
