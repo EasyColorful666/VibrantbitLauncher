@@ -32,13 +32,14 @@
 
             <StackPanel Margin="{StaticResource PageHeaderMargin}">
                 <TextBlock Style="{StaticResource DisplayText}" Text="设置" />
+                <Border Margin="0,10,0,0" Style="{StaticResource AccentRule}" />
                 <TextBlock
                     Margin="0,6,0,0"
                     Style="{StaticResource CaptionText}"
                     Text="外观、游戏路径与 Java 运行环境" />
             </StackPanel>
 
-            <!--  ===== 外观 =====  -->
+            <!--  ===== 个性化：明暗主题 / 主题色 / 渐变色 =====  -->
             <ui:Card
                 Margin="0,0,0,16"
                 Padding="20,16"
@@ -47,13 +48,13 @@
                     <TextBlock
                         Margin="0,0,0,12"
                         Style="{StaticResource SectionTitleText}"
-                        Text="外观" />
+                        Text="个性化" />
 
                     <TextBlock
                         Margin="0,0,0,6"
                         Style="{StaticResource BodyText}"
-                        Text="主题" />
-                    <StackPanel Margin="0,0,0,24" Orientation="Horizontal">
+                        Text="明暗主题" />
+                    <StackPanel Margin="0,0,0,20" Orientation="Horizontal">
                         <RadioButton
                             Margin="0,0,16,0"
                             Command="{Binding ChangeThemeCommand}"
@@ -68,6 +69,225 @@
                             GroupName="themeSelect"
                             IsChecked="{Binding CurrentTheme, ConverterParameter=Dark, Converter={StaticResource EnumToBooleanConverter}, Mode=OneWay}" />
                     </StackPanel>
+
+                    <TextBlock
+                        Margin="0,0,0,8"
+                        Style="{StaticResource BodyText}"
+                        Text="主题色" />
+                    <ItemsControl Margin="0,0,0,20" ItemsSource="{Binding AccentPresets}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button
+                                    Margin="0,0,10,10"
+                                    Padding="0"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Command="{Binding DataContext.SelectAccentCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    CommandParameter="{Binding}"
+                                    Cursor="Hand"
+                                    ToolTip="{Binding Name}">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border
+                                                x:Name="Ring"
+                                                Width="40"
+                                                Height="40"
+                                                Background="Transparent"
+                                                BorderBrush="Transparent"
+                                                BorderThickness="2"
+                                                CornerRadius="20">
+                                                <Border
+                                                    Width="28"
+                                                    Height="28"
+                                                    Background="{Binding SwatchBrush}"
+                                                    CornerRadius="14" />
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding IsAccentSelected}" Value="True">
+                                                    <Setter TargetName="Ring" Property="BorderBrush" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                                                </DataTrigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Style="{StaticResource BodyText}" Text="主题渐变色" />
+                            <TextBlock
+                                Margin="0,2,0,0"
+                                Style="{StaticResource CaptionText}"
+                                Text="开启后，标题强调条等位置使用主色到终点色的渐变"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <ui:ToggleSwitch
+                            Grid.Column="1"
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding UseAccentGradient, Mode=TwoWay}" />
+                    </Grid>
+
+                    <StackPanel Margin="0,0,0,16" Visibility="{Binding UseAccentGradient, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock
+                            Margin="0,0,0,8"
+                            Style="{StaticResource BodyText}"
+                            Text="渐变终点色" />
+                        <ItemsControl ItemsSource="{Binding AccentPresets}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button
+                                        Margin="0,0,10,10"
+                                        Padding="0"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Command="{Binding DataContext.SelectGradientEndCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding}"
+                                        Cursor="Hand"
+                                        ToolTip="{Binding Name}">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border
+                                                    x:Name="Ring"
+                                                    Width="40"
+                                                    Height="40"
+                                                    Background="Transparent"
+                                                    BorderBrush="Transparent"
+                                                    BorderThickness="2"
+                                                    CornerRadius="20">
+                                                    <Border
+                                                        Width="28"
+                                                        Height="28"
+                                                        Background="{Binding GradientEndBrush}"
+                                                        CornerRadius="14" />
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding IsGradientSelected}" Value="True">
+                                                        <Setter TargetName="Ring" Property="BorderBrush" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                                                    </DataTrigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <TextBlock
+                        Margin="0,0,0,8"
+                        Style="{StaticResource CaptionText}"
+                        Text="预览" />
+                    <Border
+                        Height="44"
+                        Margin="0,0,0,20"
+                        Background="{DynamicResource AppAccentGradientBrush}"
+                        CornerRadius="{StaticResource RadiusM}" />
+
+                    <ui:Button
+                        HorizontalAlignment="Left"
+                        Appearance="Secondary"
+                        Command="{Binding ResetAppearanceCommand}"
+                        Content="恢复默认外观" />
+                </StackPanel>
+            </ui:Card>
+
+            <!--  ===== 背景图 =====  -->
+            <ui:Card
+                Margin="0,0,0,16"
+                Padding="20,16"
+                Style="{StaticResource SurfaceCard}">
+                <StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,4"
+                        Style="{StaticResource SectionTitleText}"
+                        Text="背景图" />
+                    <TextBlock
+                        Margin="0,0,0,16"
+                        Style="{StaticResource CaptionText}"
+                        Text="{Binding BackgroundImageDisplay}"
+                        TextWrapping="Wrap" />
+
+                    <TextBlock
+                        Margin="0,0,0,8"
+                        Style="{StaticResource BodyText}"
+                        Text="内置壁纸" />
+                    <ItemsControl Margin="0,0,0,8" ItemsSource="{Binding Wallpapers}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button
+                                    Margin="0,0,10,10"
+                                    Padding="0"
+                                    Command="{Binding DataContext.PickWallpaperCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    CommandParameter="{Binding}"
+                                    ToolTip="{Binding Name}">
+                                    <StackPanel Width="104">
+                                        <Image
+                                            Height="58"
+                                            Source="{Binding ImagePath}"
+                                            Stretch="UniformToFill" />
+                                        <TextBlock
+                                            Margin="0,6,0,6"
+                                            HorizontalAlignment="Center"
+                                            Style="{StaticResource CaptionText}"
+                                            Text="{Binding Name}" />
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <StackPanel Margin="0,0,0,16" Orientation="Horizontal">
+                        <ui:Button Click="OnChooseBackgroundImage" Content="选择本地图片" />
+                        <ui:Button
+                            Margin="8,0,0,0"
+                            Command="{Binding ClearBackgroundCommand}"
+                            Content="移除背景" />
+                    </StackPanel>
+
+                    <TextBlock
+                        Margin="0,0,0,6"
+                        Style="{StaticResource BodyText}"
+                        Text="不透明度" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MaxWidth="360" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Slider
+                            Grid.Column="0"
+                            IsEnabled="{Binding HasBackgroundImage}"
+                            Maximum="1"
+                            Minimum="0.05"
+                            TickFrequency="0.05"
+                            Value="{Binding BackgroundImageOpacity, Mode=TwoWay}" />
+                        <TextBlock
+                            Grid.Column="1"
+                            Margin="12,0,0,0"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource CaptionText}"
+                            Text="{Binding BackgroundImageOpacity, StringFormat={}{0:P0}}" />
+                    </Grid>
                 </StackPanel>
             </ui:Card>
 
@@ -155,9 +375,9 @@
                         Style="{StaticResource SectionTitleText}"
                         Text="关于 VibrantbitLauncher" />
                     <TextBlock Style="{StaticResource SecondaryText}" TextWrapping="Wrap">
-                        <Run Text="Colorful craft launcher4 是 colorful craft launcher 的新版，更新了 UI，更新了许多逻辑，修复了 bug，更多功能敬请期待。" />
+                        <Run Text="{Binding AppVersion, Mode=OneWay}" />
                         <LineBreak />
-                        <Run Text="制作不易，敬请谅解！" />
+                        <Run Text="一款基于 WPF / .NET 的 Minecraft Java 版启动器：支持多账户登录、版本下载与启动、模组浏览与一键联机。" />
                     </TextBlock>
 
                     <TextBlock
@@ -166,7 +386,7 @@
                         Text="致谢" />
                     <TextBlock
                         Style="{StaticResource SecondaryText}"
-                        Text="欢迎UI借鉴dream-pep,感谢 叶冷 / 3443****大佬给我修bug "
+                        Text="UI 参考 dream-pep；感谢 叶冷、3443**** 协助修复 bug。"
                         TextWrapping="Wrap" />
                 </StackPanel>
             </ui:Card>

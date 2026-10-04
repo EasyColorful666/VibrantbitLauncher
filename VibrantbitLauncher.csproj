@@ -62,6 +62,10 @@
 
   <ItemGroup>
     <None Remove="Assets\Blank.jpg" />
+    <None Remove="Assets\bg1.png" />
+    <None Remove="Assets\bg2.png" />
+    <None Remove="Assets\bg3.png" />
+    <None Remove="Assets\bg4.png" />
     <None Remove="Assets\gravatar.png" />
     <None Remove="Assets\HarmonyOS_Sans_Black.ttf" />
     <None Remove="Assets\icon.ico" />
@@ -76,6 +80,11 @@
 
   <ItemGroup>
     <Resource Include="Assets\Blank.jpg" />
+    <!-- 内置壁纸，供「设置 → 背景图」选择 -->
+    <Resource Include="Assets\bg1.png" />
+    <Resource Include="Assets\bg2.png" />
+    <Resource Include="Assets\bg3.png" />
+    <Resource Include="Assets\bg4.png" />
     <Resource Include="Assets\gravatar.png" />
     <Resource Include="Assets\steve.png" />
     <Resource Include="Assets\HarmonyOS_Sans_Black.ttf" />

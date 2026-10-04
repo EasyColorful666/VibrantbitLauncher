@@ -96,14 +96,19 @@ namespace VibrantbitLauncher
             InitLogging();
             Log.Information("VibrantbitLauncher 启动");
 
+            // 先读配置再建窗口：主窗口在 _host.StartAsync() 期间就会构造页面，
+            // 页面初始化会读写 SettingsService.Current。若此时配置尚未加载，
+            // 页面保存出去的默认值会把磁盘上的真实配置覆盖掉。
+            SettingsService.Load();
+
             await _host.StartAsync();
 
             // 后台预热版本清单，避免首次进入「下载中心」要等几秒才出列表
             MinecraftVersionCache.Preload();
 
-            // 加载配置并应用主题/主题色（自动完成，用户不可见）
-            SettingsService.Load();
-            SettingsService.ApplyTheme();
+            // 外观必须在窗口建好之后再应用：MainWindow 的 SystemThemeWatcher 会在创建时
+            // 套用系统主题，这里随后覆盖成用户选择的「明暗主题 + 主题色/渐变 + 背景图」。
+            SettingsService.ApplyAppearance();
             Log.Information("配置：Theme={Theme} IsFirstRun={First} MinecraftFolder={Folder} JavaPath={Java}",
                 SettingsService.Current.Theme,
                 SettingsService.Current.IsFirstRun,

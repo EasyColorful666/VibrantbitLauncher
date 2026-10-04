@@ -6,6 +6,7 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
 
     <helpers:SubtractConverter x:Key="PagePaddingSubtract" />
+    <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
     <!--
         VibrantbitLauncher 全局视觉规范
@@ -28,6 +29,21 @@
     <SolidColorBrush x:Key="AppWindowBackgroundBrush" Color="#26FFFFFF" />
     <!--  图片遮罩上的文字：固定白色，不随明暗主题变化  -->
     <SolidColorBrush x:Key="AppOnImageTextBrush" Color="#FFFFFFFF" />
+
+    <!--
+        主题色渐变。默认是 WPF-UI 蓝，运行时由 SettingsService.ApplyAccent() 按用户配置覆盖。
+        页面里请用 DynamicResource 引用，改主题色后才会实时生效。
+    -->
+    <LinearGradientBrush x:Key="AppAccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Offset="0" Color="#FF0078D4" />
+        <GradientStop Offset="1" Color="#FF00B7C3" />
+    </LinearGradientBrush>
+
+    <!--
+        背景图遮罩：压在壁纸上保证内容可读，随明暗主题在 ApplyTheme() 里换成
+        半透明白 / 半透明黑；未设置壁纸时主窗口不显示这一层。
+    -->
+    <SolidColorBrush x:Key="AppBackgroundScrimBrush" Color="#80FFFFFF" />
 
     <!--  ==================== 字体  ====================  -->
 
@@ -202,6 +218,24 @@
                 </Trigger.ExitActions>
             </Trigger>
         </Style.Triggers>
+    </Style>
+
+    <!--  ==================== 标题 / 强调  ====================  -->
+
+    <!--  页面标题下的主题色渐变短条：给每个页面一个统一的视觉锚点  -->
+    <Style x:Key="AccentRule" TargetType="Border">
+        <Setter Property="Width" Value="44" />
+        <Setter Property="Height" Value="4" />
+        <Setter Property="CornerRadius" Value="2" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="Background" Value="{DynamicResource AppAccentGradientBrush}" />
+    </Style>
+
+    <!--  顶部渐变横幅：页面标题 + 说明压在主题色渐变上，文字固定为白色  -->
+    <Style x:Key="AccentBanner" TargetType="Border">
+        <Setter Property="Padding" Value="24,20" />
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusL}" />
+        <Setter Property="Background" Value="{DynamicResource AppAccentGradientBrush}" />
     </Style>
 
 </ResourceDictionary>

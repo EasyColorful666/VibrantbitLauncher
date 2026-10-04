@@ -28,6 +28,7 @@
 
             <StackPanel Grid.Column="0">
                 <TextBlock Style="{StaticResource DisplayText}" Text="下载任务" />
+                <Border Margin="0,10,0,0" Style="{StaticResource AccentRule}" />
                 <TextBlock
                     Margin="0,6,0,0"
                     Style="{StaticResource CaptionText}"

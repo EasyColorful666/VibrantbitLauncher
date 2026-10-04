@@ -13,7 +13,6 @@
     Height="800"
     d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel}"
     Background="{StaticResource AppWindowBackgroundBrush}"
-    DataContext="{x:Type vm:MainWindowViewModel}"
     ExtendsContentIntoTitleBar="True"
     FontFamily="{StaticResource AppFont}"
     FontSize="{StaticResource FontSizeBody}"
@@ -27,6 +26,29 @@
     mc:Ignorable="d">
 
     <Grid>
+        <!--  背景层：设置里选了壁纸才有内容，未设置时保持纯 Mica 底  -->
+        <Image
+            IsHitTestVisible="False"
+            Opacity="{Binding ViewModel.BackgroundImageOpacity}"
+            RenderOptions.BitmapScalingMode="HighQuality"
+            Source="{Binding ViewModel.BackgroundImage}"
+            Stretch="UniformToFill" />
+
+        <!--  可读性遮罩：随明暗主题换色，半透明压在壁纸上；未设置壁纸时不显示  -->
+        <Border Background="{DynamicResource AppBackgroundScrimBrush}" IsHitTestVisible="False">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ViewModel.HasBackgroundImage}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+        </Border>
+
+        <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -35,6 +57,7 @@
         <ui:NavigationView
             x:Name="RootNavigation"
             Grid.Row="1"
+            Background="Transparent"
             PaneDisplayMode="LeftFluent">
 
             <ui:NavigationView.ContentOverlay>
@@ -75,12 +98,13 @@
 
         </ui:NavigationView>
 
-        <ui:TitleBar
-            x:Name="TitleBar"
-            Grid.Row="0"
-            Title="VibrantbitLauncher"
-            CloseWindowByDoubleClickOnIcon="True"
-            FontSize="{StaticResource FontSizeBodyLarge}"
-            ShowMaximize="False" />
+            <ui:TitleBar
+                x:Name="TitleBar"
+                Grid.Row="0"
+                Title="VibrantbitLauncher"
+                CloseWindowByDoubleClickOnIcon="True"
+                FontSize="{StaticResource FontSizeBodyLarge}"
+                ShowMaximize="True" />
+        </Grid>
     </Grid>
 </ui:FluentWindow>
