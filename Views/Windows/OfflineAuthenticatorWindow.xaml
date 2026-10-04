@@ -6,35 +6,51 @@
     xmlns:local="clr-namespace:VibrantbitLauncher.Views.Windows"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-    Title="OfflineAuthenticatorWindow"
-    Width="340"
-    Height="212"
+    Title="添加离线账户"
+    Width="360"
+    Height="236"
+    FontFamily="{StaticResource AppFont}"
+    FontSize="{StaticResource FontSizeBody}"
+    ResizeMode="NoResize"
+    WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
-    <Grid>
-        <Button
-            Width="214"
-            Height="46"
-            Margin="0,119,0,0"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Top"
-            Click="Button_Click"
-            Content="登录">
-            <Button.Background>
-                <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.GradientActiveCaptionColorKey}}" />
-            </Button.Background>
-        </Button>
-        <TextBox
-            x:Name="textBox1"
-            Width="244"
-            Margin="63,50,0,0"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Top"
-            TextWrapping="Wrap" />
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
         <TextBlock
-            Margin="22,60,0,0"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Top"
-            Text="用户名"
-            TextWrapping="Wrap" />
+            Grid.Row="0"
+            HorizontalAlignment="Center"
+            Style="{StaticResource TitleText}"
+            Text="添加离线账户" />
+
+        <TextBlock
+            Grid.Row="1"
+            Margin="0,24,0,6"
+            Style="{StaticResource BodyText}"
+            Text="用户名" />
+
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <ui:TextBox
+                x:Name="textBox1"
+                Grid.Row="0"
+                TextWrapping="Wrap" />
+            <ui:Button
+                Grid.Row="1"
+                MinWidth="120"
+                Margin="0,20,0,0"
+                Padding="24,10"
+                HorizontalAlignment="Right"
+                Appearance="Primary"
+                Click="Button_Click"
+                Content="登录" />
+        </Grid>
     </Grid>
 </Window>

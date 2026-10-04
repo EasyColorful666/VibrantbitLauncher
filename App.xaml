@@ -13,16 +13,17 @@
             <Color x:Key="SystemAccentColorPrimary">#FF0078D4</Color>
             <Color x:Key="SystemAccentColorSecondary">#FF0078D4</Color>
             <Color x:Key="SystemAccentColorTertiary">#FF0078D4</Color>
-            <SolidColorBrush x:Key="SystemAccentColorBrush" Color="{DynamicResource SystemAccentColor}" />
-            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="{DynamicResource SystemAccentColor}" />
-            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="{DynamicResource SystemAccentColor}" Opacity="0.7" />
-            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="{DynamicResource SystemAccentColor}" Opacity="0.5" />
+            <SolidColorBrush x:Key="SystemAccentColorBrush" Color="{StaticResource SystemAccentColor}" />
+            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="{StaticResource SystemAccentColor}" />
+            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="{StaticResource SystemAccentColor}" Opacity="0.7" />
+            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="{StaticResource SystemAccentColor}" Opacity="0.5" />
             <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="White" />
             <SolidColorBrush x:Key="AccentTextFillColorSecondaryBrush" Color="White" Opacity="0.7" />
-            <FontFamily x:Key="SegoeFluentIcons">pack://application:,,,/;component/Fonts/#Segoe Fluent Icons</FontFamily>
             <ResourceDictionary.MergedDictionaries>
                 <ui:ThemesDictionary Theme="Light" />
                 <ui:ControlsDictionary />
+                <!-- 项目自定义视觉规范：放最后，以便覆盖 WPF-UI 的默认值 -->
+                <ResourceDictionary Source="Styles/AppTheme.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

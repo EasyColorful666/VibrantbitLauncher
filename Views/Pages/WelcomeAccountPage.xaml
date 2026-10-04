@@ -1,0 +1,128 @@
+﻿<Page
+    x:Class="VibrantbitLauncher.Views.Pages.WelcomeAccountPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="WelcomeAccountPage"
+    d:DesignHeight="600"
+    d:DesignWidth="960"
+    mc:Ignorable="d">
+
+    <!--  开机向导第 3 步：登录账户（可跳过）  -->
+    <Grid Margin="{StaticResource PagePadding}" Style="{StaticResource PageRoot}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="{StaticResource PageHeaderMargin}">
+            <TextBlock Style="{StaticResource DisplayText}" Text="登录账户" />
+            <TextBlock
+                Margin="0,6,0,0"
+                Style="{StaticResource CaptionText}"
+                Text="登录后才能联机游玩；也可以先跳过，之后随时在「账户」里添加" />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel MaxWidth="660" HorizontalAlignment="Left">
+
+                <!--  已经登录的账户  -->
+                <ItemsControl ItemsSource="{Binding Users}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <ui:Card Margin="0,0,0,8" Padding="12,10" Style="{StaticResource SurfaceCard}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Image
+                                        Width="40"
+                                        Height="40"
+                                        Margin="0,0,12,0"
+                                        Source="{Binding ImagePath}"
+                                        Stretch="Uniform">
+                                        <Image.Clip>
+                                            <EllipseGeometry Center="20,20" RadiusX="20" RadiusY="20" />
+                                        </Image.Clip>
+                                    </Image>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock FontWeight="SemiBold" Style="{StaticResource BodyText}" Text="{Binding Name}" />
+                                        <TextBlock Style="{StaticResource CaptionText}" Text="{Binding AccountType}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </ui:Card>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!--  还没有账户时的提示 + 登录入口  -->
+                <StackPanel>
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Users.Count}" Value="0">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+
+                    <ui:SymbolIcon
+                        HorizontalAlignment="Center"
+                        FontSize="40"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                        Symbol="PersonAdd24" />
+                    <TextBlock
+                        Margin="0,14,0,0"
+                        HorizontalAlignment="Center"
+                        Style="{StaticResource SubtitleText}"
+                        Text="还没有登录账户" />
+                    <TextBlock
+                        Margin="0,6,0,0"
+                        HorizontalAlignment="Center"
+                        Style="{StaticResource CaptionText}"
+                        Text="选一种方式登录，正版账户可以联机" />
+                </StackPanel>
+
+                <StackPanel Margin="0,24,0,0" Orientation="Horizontal">
+                    <ui:Button
+                        Margin="0,0,10,0"
+                        Padding="20,10"
+                        Command="{Binding AuthenticateMicrosoftCommand}"
+                        Content="微软账户"
+                        Icon="{ui:SymbolIcon Symbol=Person24}" />
+                    <ui:Button
+                        Margin="0,0,10,0"
+                        Padding="20,10"
+                        Command="{Binding AuthenticateYggdrasilCommand}"
+                        Content="外置账户"
+                        Icon="{ui:SymbolIcon Symbol=Globe24}" />
+                    <ui:Button
+                        Padding="20,10"
+                        Command="{Binding AuthenticateOfflineCommand}"
+                        Content="离线账户"
+                        Icon="{ui:SymbolIcon Symbol=PersonAdd24}" />
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel
+            Grid.Row="2"
+            Margin="0,20,0,0"
+            HorizontalAlignment="Right"
+            Orientation="Horizontal">
+            <ui:Button Margin="0,0,8,0" Padding="24,10" Click="OnBack" Content="上一步" />
+            <ui:Button Padding="24,10" Click="OnSkip" Content="跳过" />
+            <ui:Button
+                Margin="8,0,0,0"
+                Padding="24,10"
+                Appearance="Primary"
+                Click="OnNext"
+                Content="下一步"
+                Icon="{ui:SymbolIcon Symbol=ChevronRight24}" />
+        </StackPanel>
+
+        <ui:SnackbarPresenter x:Name="SnackbarPresenter" Grid.RowSpan="3" Panel.ZIndex="2" />
+    </Grid>
+</Page>

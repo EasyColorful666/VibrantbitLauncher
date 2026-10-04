@@ -11,138 +11,183 @@
     d:DesignWidth="800"
     mc:Ignorable="d">
 
-    <Grid IsEnabled="False">
-        <ui:SnackbarPresenter x:Name="SnackbarPresenter" IsEnabled="False" />
-        <GroupBox Margin="0,0,112,225">
-            <GroupBox.Header>
+    <Grid Margin="{StaticResource PagePadding}" IsEnabled="False">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="{StaticResource PageHeaderMargin}">
+            <TextBlock Style="{StaticResource DisplayText}" Text="多人" />
+            <TextBlock
+                Margin="0,6,0,0"
+                Style="{StaticResource CaptionText}"
+                Text="通过 EasyTier 与好友组建虚拟局域网联机" />
+        </StackPanel>
+
+        <!--  房主  -->
+        <ui:Card
+            Grid.Row="1"
+            Margin="0,0,0,8"
+            Padding="16"
+            Style="{StaticResource SurfaceCard}">
+            <StackPanel>
                 <RadioButton
                     x:Name="r1"
                     Checked="RadioButton_Checked"
                     Content="我要当房主"
                     GroupName="Mode"
                     IsChecked="False" />
-            </GroupBox.Header>
-            <Grid x:Name="grid1">
-                <Button
-                    x:Name="button"
-                    Width="604"
-                    Height="38"
-                    Margin="0,89,0,0"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Top"
-                    Click="button_Click"
-                    Content="启动服务" />
-                <Button
-                    x:Name="button1"
-                    Width="604"
-                    Height="45"
-                    Margin="0,132,0,0"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Top"
-                    Click="button1_Click"
-                    Content="停止服务"
-                    RenderTransformOrigin="0.5,0.5">
-                    <Button.RenderTransform>
-                        <TransformGroup>
-                            <ScaleTransform />
-                            <SkewTransform AngleY="0.119" />
-                            <RotateTransform />
-                            <TranslateTransform Y="0.547" />
-                        </TransformGroup>
-                    </Button.RenderTransform>
-                </Button>
-                <TextBox
-                    x:Name="textBox1"
-                    Width="495"
-                    Height="32"
-                    Margin="158,17,0,0"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Top"
-                    TextWrapping="Wrap" />
-                <TextBlock
-                    x:Name="textBlock3"
-                    Width="62"
-                    Margin="33,20,0,0"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Top"
-                    FontSize="20"
-                    Text="密钥"
-                    TextWrapping="Wrap" />
-                <TextBlock
-                    x:Name="textBlock1"
-                    Width="88"
-                    Height="20"
-                    Margin="20,64,0,0"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Top"
-                    FontSize="16"
-                    TextWrapping="Wrap"><Run Language="zh-cn" Text="本机虚拟IP" /></TextBlock>
-                <TextBox
-                    x:Name="textBox3"
-                    Width="494"
-                    Height="30"
-                    Margin="158,54,0,0"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Top"
-                    IsReadOnly="True"
-                    TextWrapping="Wrap" />
-            </Grid>
-        </GroupBox>
-        <GroupBox Margin="0,225,112,0">
-            <GroupBox.Header>
+
+                <Grid x:Name="grid1" Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock
+                        x:Name="textBlock3"
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        Margin="0,0,12,0"
+                        VerticalAlignment="Center"
+                        Style="{StaticResource BodyText}"
+                        Text="密钥" />
+                    <ui:TextBox
+                        x:Name="textBox1"
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        TextWrapping="Wrap" />
+
+                    <TextBlock
+                        x:Name="textBlock1"
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        Margin="0,12,12,0"
+                        VerticalAlignment="Center"
+                        Style="{StaticResource BodyText}"
+                        Text="本机虚拟IP" />
+                    <ui:TextBox
+                        x:Name="textBox3"
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        Margin="0,12,0,0"
+                        VerticalAlignment="Center"
+                        IsReadOnly="True"
+                        TextWrapping="Wrap" />
+
+                    <StackPanel
+                        Grid.Row="2"
+                        Grid.Column="0"
+                        Grid.ColumnSpan="2"
+                        Margin="0,16,0,0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                        <ui:Button
+                            x:Name="button"
+                            MinWidth="160"
+                            Click="button_Click"
+                            Content="启动服务"
+                            Icon="{ui:SymbolIcon Symbol=Play24}" />
+                        <ui:Button
+                            x:Name="button1"
+                            MinWidth="160"
+                            Margin="12,0,0,0"
+                            Click="button1_Click"
+                            Content="停止服务"
+                            Icon="{ui:SymbolIcon Symbol=Stop24}" />
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </ui:Card>
+
+        <!--  房客  -->
+        <ui:Card
+            Grid.Row="2"
+            Margin="0,8,0,0"
+            Padding="16"
+            Style="{StaticResource SurfaceCard}">
+            <StackPanel>
                 <RadioButton
                     Checked="RadioButton_Checked_1"
                     Content="我要当房客"
                     GroupName="Mode" />
-            </GroupBox.Header>
-            <Grid x:Name="grid2">
-                <Button
-                    x:Name="button2"
-                    Width="608"
-                    Height="33"
-                    Margin="0,111,0,0"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Top"
-                    Click="button2_Click"
-                    Content="启动服务" />
-                <Button
-                    x:Name="button3"
-                    Width="608"
-                    Height="31"
-                    Margin="0,147,0,0"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Top"
-                    Click="button1_Click"
-                    Content="停止服务" />
-                <TextBox
-                    x:Name="textBox2"
-                    Width="526"
-                    Height="30"
-                    Margin="124,10,0,0"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Top"
-                    FontSize="12"
-                    IsReadOnly="True"
-                    TextWrapping="Wrap" />
-                <TextBlock
-                    x:Name="textBlock3复制__C_"
-                    Width="53"
-                    Height="24"
-                    Margin="17,25,0,0"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Top"
-                    FontSize="16"
-                    Text="密钥"
-                    TextWrapping="Wrap" />
-            </Grid>
-        </GroupBox>
+
+                <Grid x:Name="grid2" Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock
+                        x:Name="textBlock3复制__C_"
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        Margin="0,0,12,0"
+                        VerticalAlignment="Center"
+                        Style="{StaticResource BodyText}"
+                        Text="密钥" />
+                    <ui:TextBox
+                        x:Name="textBox2"
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        IsReadOnly="True"
+                        TextWrapping="Wrap" />
+
+                    <StackPanel
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        Grid.ColumnSpan="2"
+                        Margin="0,16,0,0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                        <ui:Button
+                            x:Name="button2"
+                            MinWidth="160"
+                            Click="button2_Click"
+                            Content="启动服务"
+                            Icon="{ui:SymbolIcon Symbol=Play24}" />
+                        <ui:Button
+                            x:Name="button3"
+                            MinWidth="160"
+                            Margin="12,0,0,0"
+                            Click="button1_Click"
+                            Content="停止服务"
+                            Icon="{ui:SymbolIcon Symbol=Stop24}" />
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </ui:Card>
+
+        <!--  功能未完成，整页禁用；此提示覆盖在上方  -->
         <TextBlock
-            Margin="275,0,0,0"
-            HorizontalAlignment="Left"
+            Grid.RowSpan="3"
+            HorizontalAlignment="Center"
             VerticalAlignment="Center"
-            FontFamily="HarmonyOS Sans Black"
+            Panel.ZIndex="3"
+            FontFamily="{StaticResource AppDisplayFont}"
             FontSize="48"
             Text="敬请期待..."
             TextWrapping="Wrap" />
+
+        <ui:SnackbarPresenter
+            x:Name="SnackbarPresenter"
+            Grid.RowSpan="3"
+            Panel.ZIndex="2"
+            IsEnabled="False" />
     </Grid>
 </Page>

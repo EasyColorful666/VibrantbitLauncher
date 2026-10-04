@@ -1,4 +1,4 @@
-﻿using GalaSoft.MvvmLight.Messaging;
+﻿using CommunityToolkit.Mvvm.Messaging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,7 +31,7 @@ namespace VibrantbitLauncher.Views.Windows
         {
             if(!string.IsNullOrEmpty(textBox1.Text))
             {
-                Messenger.Default.Send<string>(textBox1.Text, "OfflineAccountProfile");
+                WeakReferenceMessenger.Default.Send<string, string>(textBox1.Text, "OfflineAccountProfile");
                 this.Close();
             }
 

@@ -1,6 +1,6 @@
-using GalaSoft.MvvmLight;
-using GalaSoft.MvvmLight.CommandWpf;
-using GalaSoft.MvvmLight.Messaging;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using MinecraftLaunch.Base.Models.Game;
 using MinecraftLaunch.Utilities;
 using System;
@@ -18,7 +18,7 @@ using MessageBoxResult = System.Windows.MessageBoxResult;
 
 namespace VibrantbitLauncher.ViewModels.Pages
 {
-    public partial class VersionManageViewModel : ViewModelBase
+    public partial class VersionManageViewModel : ObservableObject
     {
         private SnackbarService snackbarService = new();
         private MinecraftParser minecraftParser;
@@ -33,13 +33,13 @@ namespace VibrantbitLauncher.ViewModels.Pages
         public string CurrentVersion
         {
             get => currentVersion;
-            set => Set(ref currentVersion, value);
+            set => SetProperty(ref currentVersion, value);
         }
 
         public bool ShowMods
         {
             get => showMods;
-            set => Set(ref showMods, value);
+            set => SetProperty(ref showMods, value);
         }
 
         public RelayCommand<SnackbarPresenter> LoadCommand { get; set; }
@@ -62,7 +62,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
             DeleteSaveCommand = new RelayCommand<SaveItem>(DeleteSave);
             OpenGameFolderCommand = new RelayCommand(OpenGameFolder);
 
-            Messenger.Default.Register<string>(this, "McVersionForManage", OnVersionReceived);
+            WeakReferenceMessenger.Default.Register<string, string>(this, "McVersionForManage", (_, m) => OnVersionReceived(m));
         }
 
         private void OnVersionReceived(string version)
@@ -83,7 +83,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
 
             try
             {
-                minecraftParser ??= new MinecraftParser(".\\.minecraft");
+                minecraftParser ??= new MinecraftParser(VibrantbitLauncher.Services.SettingsService.ResolveMinecraftFolder());
                 var entry = minecraftParser.GetMinecraft(CurrentVersion);
 
                 modsFolder = TryGetFolderPath(entry, "ModsFolder", "mods");
@@ -115,10 +115,10 @@ namespace VibrantbitLauncher.ViewModels.Pages
             }
             catch { }
 
-            var versionDir = Path.Combine(".\\.minecraft", "versions", entry.Id);
+            var versionDir = Path.Combine(VibrantbitLauncher.Services.SettingsService.ResolveMinecraftFolder(), "versions", entry.Id);
             if (Directory.Exists(versionDir))
                 return Path.Combine(versionDir, subFolder);
-            return Path.Combine(".\\.minecraft", subFolder);
+            return Path.Combine(VibrantbitLauncher.Services.SettingsService.ResolveMinecraftFolder(), subFolder);
         }
 
         private async Task LoadModsAsync()
@@ -179,7 +179,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
 
         private void GoBack()
         {
-            Messenger.Default.Send(Type.GetType("VibrantbitLauncher.Views.Pages.RunPage"), "NavigateTo");
+            WeakReferenceMessenger.Default.Send<Type, string>(Type.GetType("VibrantbitLauncher.Views.Pages.RunPage"), "NavigateTo");
         }
 
         private static void OpenFolder(string path)
@@ -190,7 +190,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
 
         private void OpenGameFolder()
         {
-            OpenFolder(".\\.minecraft");
+            OpenFolder(VibrantbitLauncher.Services.SettingsService.ResolveMinecraftFolder());
         }
 
         private void DeleteMod(ModItem mod)
@@ -270,7 +270,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
         }
     }
 
-    public class ModItem : ViewModelBase
+    public class ModItem : ObservableObject
     {
         private bool isEnabled;
         public string FileName { get; set; }
@@ -280,7 +280,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
         public bool IsEnabled
         {
             get => isEnabled;
-            set => Set(ref isEnabled, value);
+            set => SetProperty(ref isEnabled, value);
         }
     }
 

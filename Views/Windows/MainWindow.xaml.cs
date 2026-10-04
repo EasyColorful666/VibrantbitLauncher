@@ -26,6 +26,24 @@ namespace VibrantbitLauncher.Views.Windows
             SetPageService(navigationViewPageProvider);
 
             navigationService.SetNavigationControl(RootNavigation);
+
+            FitToWorkArea();
+        }
+
+        /// <summary>
+        /// 窗口按 1280x800 设计且不可缩放；若屏幕工作区更小，等比收缩到工作区内，避免窗口溢出屏幕后无法操作。
+        /// </summary>
+        private void FitToWorkArea()
+        {
+            var workArea = SystemParameters.WorkArea;
+            if (Width <= workArea.Width && Height <= workArea.Height)
+            {
+                return;
+            }
+
+            var scale = Math.Min(workArea.Width / Width, workArea.Height / Height);
+            Width = Math.Floor(Width * scale);
+            Height = Math.Floor(Height * scale);
         }
 
 

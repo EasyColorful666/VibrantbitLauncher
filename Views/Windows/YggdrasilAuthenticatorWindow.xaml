@@ -6,73 +6,70 @@
     xmlns:local="clr-namespace:VibrantbitLauncher.Views.Windows"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-    Title="YggdrasilAuthenticatorWindow"
+    Title="添加外置账户"
     Width="450"
-    Height="260"
+    Height="330"
+    FontFamily="{StaticResource AppFont}"
+    FontSize="{StaticResource FontSizeBody}"
+    ResizeMode="NoResize"
+    WindowStartupLocation="CenterOwner"
     mc:Ignorable="d">
-    <Grid>
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
         <TextBlock
-            Margin="33,51,0,0"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Top"
-            Text="服务器地址"
-            TextWrapping="Wrap" />
-        <TextBox
-            Width="256"
-            Margin="105,41,0,0"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Top"
-            TextWrapping="Wrap" />
+            Grid.Row="0"
+            Style="{StaticResource TitleText}"
+            Text="添加外置账户" />
+
         <TextBlock
-            Margin="33,51,0,0"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Top"
-            Text="服务器地址"
-            TextWrapping="Wrap" />
-        <TextBox
+            Grid.Row="1"
+            Margin="0,20,0,6"
+            Style="{StaticResource BodyText}"
+            Text="服务器地址" />
+        <ui:TextBox
             x:Name="textBox1"
-            Width="256"
-            Margin="105,41,0,0"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Top"
+            Grid.Row="2"
             TextWrapping="Wrap" />
+
         <TextBlock
-            Margin="33,98,0,0"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Top"
-            Text="邮箱"
-            TextWrapping="Wrap" />
-        <TextBox
+            Grid.Row="3"
+            Margin="0,14,0,6"
+            Style="{StaticResource BodyText}"
+            Text="邮箱" />
+        <ui:TextBox
             x:Name="textBox2"
-            Width="256"
-            Margin="105,88,0,0"
-            HorizontalAlignment="Left"
+            Grid.Row="4"
             VerticalAlignment="Top"
             TextWrapping="Wrap" />
+
         <TextBlock
-            Margin="33,141,0,0"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Top"
-            Text="密码"
-            TextWrapping="Wrap" />
-        <Button
-            Width="309"
-            Height="51"
-            Margin="63,171,0,0"
-            VerticalAlignment="Top"
-            Click="Button_Click"
-            Content="登录"
-            Foreground="White">
-            <Button.Background>
-                <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.HighlightColorKey}}" />
-            </Button.Background>
-        </Button>
-        <PasswordBox
+            Grid.Row="4"
+            Margin="0,60,0,6"
+            Style="{StaticResource BodyText}"
+            Text="密码" />
+        <ui:PasswordBox
             x:Name="textBox3"
-            Width="256"
-            Height="32"
-            Margin="105,133,89,0"
+            Grid.Row="4"
+            Margin="0,86,0,0"
             VerticalAlignment="Top"
             Password="" />
+
+        <ui:Button
+            Grid.Row="5"
+            MinWidth="160"
+            Margin="0,20,0,0"
+            Padding="24,10"
+            HorizontalAlignment="Right"
+            Appearance="Primary"
+            Click="Button_Click"
+            Content="登录" />
     </Grid>
 </Window>

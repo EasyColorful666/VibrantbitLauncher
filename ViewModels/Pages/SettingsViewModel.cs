@@ -1,5 +1,6 @@
-using GalaSoft.MvvmLight;
-using GalaSoft.MvvmLight.CommandWpf;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using VibrantbitLauncher.Helpers;
+using CommunityToolkit.Mvvm.Input;
 using MinecraftLaunch.Base.Models.Game;
 using MinecraftLaunch.Utilities;
 using System;
@@ -15,7 +16,7 @@ using Wpf.Ui.Appearance;
 
 namespace VibrantbitLauncher.ViewModels.Pages
 {
-    public partial class SettingsPageViewModel : ViewModelBase, INavigationAware
+    public partial class SettingsPageViewModel : ObservableObject, INavigationAware
     {
         private bool _isInitialized = false;
         private string _appVersion = string.Empty;
@@ -59,13 +60,14 @@ namespace VibrantbitLauncher.ViewModels.Pages
         {
             try
             {
-                var javas = new List<JavaEntry>();
-                await foreach (var j in JavaUtil.EnumerableJavaAsync())
-                    javas.Add(j);
+                // 用自带实现而非 JavaUtil.EnumerableJavaAsync()：后者遇到空路径候选会整体抛异常
+                var javas = await JavaHelper.FindJavasAsync();
 
                 JavaEntries.Clear();
                 foreach (var j in javas)
                     JavaEntries.Add(j);
+
+                Serilog.Log.Information("Java 查找：{Count} 个 → {List}", javas.Count, string.Join(" | ", javas.Select(j => $"{j.JavaVersion} ({j.JavaPath})")));
 
                 var saved = MainWindowViewModel.MainModel.JavaPath;
                 SelectedJava = !string.IsNullOrEmpty(saved)
@@ -83,13 +85,13 @@ namespace VibrantbitLauncher.ViewModels.Pages
         public string AppVersion
         {
             get => _appVersion;
-            set => Set(ref _appVersion, value);
+            set => SetProperty(ref _appVersion, value);
         }
 
         public ApplicationTheme CurrentTheme
         {
             get => _currentTheme;
-            set => Set(ref _currentTheme, value);
+            set => SetProperty(ref _currentTheme, value);
         }
 
         public string MinecraftFolder
@@ -97,7 +99,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
             get => _minecraftFolder;
             set
             {
-                if (Set(ref _minecraftFolder, value))
+                if (SetProperty(ref _minecraftFolder, value))
                 {
                     MainWindowViewModel.MainModel.MinecraftFolder = value;
                     SettingsService.Current.MinecraftFolder = value;
@@ -113,7 +115,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
             get => _selectedJava;
             set
             {
-                if (Set(ref _selectedJava, value) && value != null)
+                if (SetProperty(ref _selectedJava, value) && value != null)
                 {
                     MainWindowViewModel.MainModel.JavaPath = value.JavaPath;
                     MainWindowViewModel.MainModel.Java = value;

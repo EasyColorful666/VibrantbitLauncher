@@ -1,4 +1,4 @@
-﻿using GalaSoft.MvvmLight.Messaging;
+﻿using CommunityToolkit.Mvvm.Messaging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,7 +33,7 @@ namespace VibrantbitLauncher.Views.Windows
             if (!string.IsNullOrEmpty(textBox1.Text)&& !string.IsNullOrEmpty(textBox2.Text)&& !string.IsNullOrEmpty(textBox3.Password))
             {
                 
-                Messenger.Default.Send<YggdrasilAccountProfile>(new YggdrasilAccountProfile{Server=textBox1.Text,Email=textBox2.Text,Password=textBox3.Password}, "OfflineAccountProfile");
+                WeakReferenceMessenger.Default.Send<YggdrasilAccountProfile, string>(new YggdrasilAccountProfile{Server=textBox1.Text,Email=textBox2.Text,Password=textBox3.Password}, "YggdrasilAccountProfile");
                 this.Close();
             }
         }

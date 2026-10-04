@@ -1,4 +1,4 @@
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using MinecraftLaunch.Base.Models.Network;
 using MinecraftLaunch.Components.Installer;
 using MinecraftLaunch.Components.Provider;
@@ -31,7 +31,7 @@ namespace VibrantbitLauncher.Views.Pages
 
         private static string GetGamePath()
         {
-            var path = Path.GetFullPath("./.minecraft");
+            var path = Path.GetFullPath(VibrantbitLauncher.Services.SettingsService.ResolveMinecraftFolder());
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
             return path;
@@ -91,7 +91,7 @@ namespace VibrantbitLauncher.Views.Pages
                     return;
                 }
 
-                var extensions = await VanillaInstaller.EnumerableMinecraftAsync();
+                var extensions = await VibrantbitLauncher.Services.MinecraftVersionCache.GetAsync();
 
                 await Dispatcher.InvokeAsync(() =>
                 {

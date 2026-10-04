@@ -21,18 +21,36 @@
         <helpers:EnumToBooleanConverter x:Key="EnumToBooleanConverter" />
     </Page.Resources>
 
-    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Visible">
-        <StackPanel Margin="20,16,20,16">
+    <ScrollViewer
+    Height="{Binding ViewportHeight, RelativeSource={RelativeSource AncestorType=ScrollViewer}, Converter={StaticResource PagePaddingSubtract}, ConverterParameter=60}"
+    HorizontalScrollBarVisibility="Disabled"
+    VerticalScrollBarVisibility="Visible">
+        <StackPanel
+            Margin="{StaticResource PagePadding}"
+            MaxWidth="760"
+            HorizontalAlignment="Left">
+
+            <StackPanel Margin="{StaticResource PageHeaderMargin}">
+                <TextBlock Style="{StaticResource DisplayText}" Text="设置" />
+                <TextBlock
+                    Margin="0,6,0,0"
+                    Style="{StaticResource CaptionText}"
+                    Text="外观、游戏路径与 Java 运行环境" />
+            </StackPanel>
 
             <!--  ===== 外观 =====  -->
+            <ui:Card Margin="0,0,0,16" Padding="20,16" Style="{StaticResource SurfaceCard}">
+            <StackPanel>
             <TextBlock
-                Margin="0,0,0,8"
-                FontSize="20"
-                FontWeight="Medium"
+                Margin="0,0,0,12"
+                Style="{StaticResource SectionTitleText}"
                 Text="外观" />
 
-            <TextBlock Margin="0,0,0,4" Text="主题" />
-            <StackPanel Margin="0,0,0,16" Orientation="Horizontal">
+            <TextBlock
+                Margin="0,0,0,6"
+                Style="{StaticResource BodyText}"
+                Text="主题" />
+            <StackPanel Margin="0,0,0,24" Orientation="Horizontal">
                 <RadioButton
                     Margin="0,0,16,0"
                     Command="{Binding ChangeThemeCommand}"
@@ -47,77 +65,105 @@
                     GroupName="themeSelect"
                     IsChecked="{Binding CurrentTheme, ConverterParameter=Dark, Converter={StaticResource EnumToBooleanConverter}, Mode=OneWay}" />
             </StackPanel>
+            </StackPanel>
+            </ui:Card>
 
             <!--  ===== 游戏设置 =====  -->
+            <ui:Card Margin="0,0,0,16" Padding="20,16" Style="{StaticResource SurfaceCard}">
+            <StackPanel>
             <TextBlock
-                Margin="0,0,0,8"
-                FontSize="20"
-                FontWeight="Medium"
+                Margin="0,0,0,12"
+                Style="{StaticResource SectionTitleText}"
                 Text="游戏设置" />
 
-            <!--  Minecraft 文件夹  -->
-            <TextBlock Margin="0,0,0,4" Text="Minecraft 文件夹" />
-            <StackPanel Margin="0,0,0,16" Orientation="Horizontal">
+            <TextBlock
+                Margin="0,0,0,6"
+                Style="{StaticResource BodyText}"
+                Text="Minecraft 文件夹" />
+            <Grid Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MaxWidth="560" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
                 <ui:TextBox
-                    Width="420"
+                    Grid.Column="0"
                     IsReadOnly="True"
                     Text="{Binding MinecraftFolder, Mode=OneWay}"
                     ToolTip="{Binding MinecraftFolder}" />
                 <ui:Button
+                    Grid.Column="1"
                     Margin="8,0,0,0"
                     Padding="16,0"
                     Click="OnSelectMinecraftFolder"
                     Content="选择" />
-            </StackPanel>
+            </Grid>
 
-            <!--  Java 选择  -->
-            <TextBlock Margin="0,0,0,4" Text="Java 版本" />
-            <StackPanel Margin="0,0,0,24" Orientation="Horizontal">
+            <TextBlock
+                Margin="0,0,0,6"
+                Style="{StaticResource BodyText}"
+                Text="Java 版本" />
+            <Grid Margin="0,0,0,24">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MaxWidth="560" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
                 <ComboBox
-                    Width="420"
+                    Grid.Column="0"
                     ItemsSource="{Binding JavaEntries}"
                     SelectedItem="{Binding SelectedJava, Mode=TwoWay}"
                     ToolTip="{Binding SelectedJava.JavaPath}">
                     <ComboBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock FontWeight="SemiBold" Text="{Binding JavaVersion}" />
-                                <TextBlock Foreground="Gray" Text="  -  " />
                                 <TextBlock
-                                    FontSize="11"
-                                    Foreground="Gray"
-                                    Text="{Binding JavaPath}" />
+                                    FontWeight="SemiBold"
+                                    Style="{StaticResource BodyText}"
+                                    Text="{Binding JavaVersion}" />
+                                <TextBlock
+                                    Margin="6,0"
+                                    Style="{StaticResource SecondaryText}"
+                                    Text="-" />
+                                <TextBlock
+                                    Style="{StaticResource CaptionText}"
+                                    Text="{Binding JavaPath}"
+                                    TextTrimming="CharacterEllipsis" />
                             </StackPanel>
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
                 <ui:Button
+                    Grid.Column="1"
                     Margin="8,0,0,0"
                     Padding="16,0"
                     Command="{Binding RefreshJavaCommand}"
                     Content="刷新" />
+            </Grid>
             </StackPanel>
+            </ui:Card>
 
             <!--  ===== 关于 =====  -->
+            <ui:Card Padding="20,16" Style="{StaticResource SurfaceCard}">
+            <StackPanel>
             <TextBlock
-                Margin="0,0,0,8"
-                FontSize="20"
-                FontWeight="Medium"
+                Margin="0,0,0,12"
+                Style="{StaticResource SectionTitleText}"
                 Text="关于 VibrantbitLauncher" />
-            <TextBlock Foreground="Gray" TextWrapping="Wrap">
+            <TextBlock Style="{StaticResource SecondaryText}" TextWrapping="Wrap">
                 <Run Text="Colorful craft launcher4 是 colorful craft launcher 的新版，更新了 UI，更新了许多逻辑，修复了 bug，更多功能敬请期待。" />
                 <LineBreak />
                 <Run Text="制作不易，敬请谅解！" />
             </TextBlock>
-            <TextBlock
-                Height="27"
-                FontSize="20"
-                FontWeight="Medium"><Run Language="zh-cn" Text="致谢" /><LineBreak /><Run Language="zh-cn" /></TextBlock>
-            <TextBlock
-                FontSize="15"
-                Foreground="Gray"
-                TextWrapping="Wrap"><Run Language="zh-cn" Text="欢迎UI借鉴dream-pep" /></TextBlock>
 
+            <TextBlock
+                Margin="0,24,0,12"
+                Style="{StaticResource SectionTitleText}"
+                Text="致谢" />
+            <TextBlock
+                Style="{StaticResource SecondaryText}"
+                Text="欢迎UI借鉴dream-pep"
+                TextWrapping="Wrap" />
+            </StackPanel>
+            </ui:Card>
         </StackPanel>
     </ScrollViewer>
 </Page>

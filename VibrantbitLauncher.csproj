@@ -19,17 +19,14 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <Optimize>True</Optimize>
     <DebugType>embedded</DebugType>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <Optimize>True</Optimize>
     <DebugType>embedded</DebugType>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
-    <Optimize>True</Optimize>
     <DebugType>embedded</DebugType>
   </PropertyGroup>
 
@@ -46,24 +43,27 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="icon.ico" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
     <PackageReference Include="MinecraftLaunch" Version="4.0.7" />
     <PackageReference Include="MinecraftLaunch.Base" Version="1.1.19" />
     <PackageReference Include="MinecraftLaunch.Skin" Version="1.0.1" />
-    <PackageReference Include="MvvmLight" Version="5.4.1.1" />
-    <PackageReference Include="System.Drawing.Common" Version="10.0.12" />
+    <PackageReference Include="Serilog" Version="4.4.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
     <PackageReference Include="System.Management" Version="10.0.12" />
     <PackageReference Include="WPF-UI" Version="4.3.0" />
     <PackageReference Include="WPF-UI.DependencyInjection" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="icon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Assets\Blank.jpg" />
     <None Remove="Assets\gravatar.png" />
+    <None Remove="Assets\HarmonyOS_Sans_Black.ttf" />
     <None Remove="Assets\icon.ico" />
     <None Remove="Assets\wpfui-icon-256.png" />
     <None Remove="Assets\wpfui-icon-1024.png" />
@@ -75,12 +75,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Services\ApplicationHostService.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Resource Include="Assets\Blank.jpg" />
     <Resource Include="Assets\gravatar.png" />
+    <Resource Include="Assets\HarmonyOS_Sans_Black.ttf" />
     <Resource Include="gravatar.png" />
     <Resource Include="icon.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

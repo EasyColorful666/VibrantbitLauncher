@@ -1,0 +1,217 @@
+﻿<Page
+    x:Class="VibrantbitLauncher.Views.Pages.LaunchPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="LaunchPage"
+    d:DesignHeight="600"
+    d:DesignWidth="1000"
+    mc:Ignorable="d">
+
+    <Grid Margin="{StaticResource PagePadding}" Style="{StaticResource PageRoot}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="340" />
+        </Grid.ColumnDefinitions>
+
+        <!--  ==================== 左：选版本 + 启动  ====================  -->
+        <Grid Grid.Column="0" Margin="0,0,24,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Margin="{StaticResource PageHeaderMargin}">
+                <TextBlock Style="{StaticResource DisplayText}" Text="启动" />
+                <TextBlock
+                    Margin="0,6,0,0"
+                    Style="{StaticResource CaptionText}"
+                    Text="选中一个版本后点击启动；版本列表来自游戏目录" />
+            </StackPanel>
+
+            <Grid Grid.Row="1">
+                <!--  版本列表  -->
+                <ListBox
+                    x:Name="listBox"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    ItemsSource="{Binding MinecraftVersions}"
+                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                    ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <ui:Card
+                                Margin="0,0,0,6"
+                                Padding="14,10"
+                                Style="{StaticResource SurfaceCard}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Image
+                                        Grid.Column="0"
+                                        Width="48"
+                                        Height="48"
+                                        Margin="0,0,14,0"
+                                        Source="/Assets/Grass_Block.png" />
+
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        Style="{StaticResource SubtitleText}"
+                                        Text="{Binding Version}"
+                                        TextTrimming="CharacterEllipsis"
+                                        TextWrapping="NoWrap" />
+
+                                    <ui:Button
+                                        Grid.Column="2"
+                                        VerticalAlignment="Center"
+                                        Appearance="Secondary"
+                                        Command="{Binding SettingsCommand}"
+                                        CommandParameter="{Binding Version}"
+                                        Content="设置" />
+                                </Grid>
+                            </ui:Card>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <!--  空状态：游戏目录里还没有版本  -->
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding MinecraftVersions.Count}" Value="0">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+
+                    <ui:SymbolIcon
+                        HorizontalAlignment="Center"
+                        FontSize="44"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                        Symbol="BoxMultiple24" />
+                    <TextBlock
+                        Margin="0,16,0,0"
+                        HorizontalAlignment="Center"
+                        Style="{StaticResource SubtitleText}"
+                        Text="还没有可用的游戏版本" />
+                    <TextBlock
+                        Margin="0,6,0,0"
+                        HorizontalAlignment="Center"
+                        Style="{StaticResource CaptionText}"
+                        Text="到「下载中心」安装一个版本后就能启动了" />
+                </StackPanel>
+            </Grid>
+
+            <StackPanel
+                Grid.Row="2"
+                Margin="0,16,0,0"
+                Orientation="Horizontal">
+                <ui:Button
+                    Padding="32,12"
+                    Appearance="Primary"
+                    Click="OnLaunchClick"
+                    Content="启动游戏"
+                    Icon="{ui:SymbolIcon Symbol=Play24}" />
+                <ui:Button
+                    Margin="8,0,0,0"
+                    Padding="20,12"
+                    Click="OnVersionSettingsClick"
+                    Content="版本设置"
+                    Icon="{ui:SymbolIcon Symbol=Settings24}" />
+                <ui:Button
+                    Margin="8,0,0,0"
+                    Padding="20,12"
+                    Command="{Binding RefreshCommand}"
+                    Content="刷新"
+                    Icon="{ui:SymbolIcon Symbol=ArrowSync24}" />
+            </StackPanel>
+        </Grid>
+
+        <!--  ==================== 右：官方新闻（纯文字）  ====================  -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <TextBlock
+                Grid.Row="0"
+                Margin="0,0,0,12"
+                Style="{StaticResource SectionTitleText}"
+                Text="官方新闻" />
+
+            <ScrollViewer
+                Grid.Row="1"
+                Padding="0,0,8,0"
+                HorizontalScrollBarVisibility="Disabled"
+                VerticalScrollBarVisibility="Auto">
+                <ItemsControl x:Name="NewsHost" ItemsSource="{Binding News}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <!--  图片铺满卡片，底部渐变承托白色标题；悬停弹性放大  -->
+                            <ui:Card
+                                Height="168"
+                                Margin="0,0,0,10"
+                                Cursor="Hand"
+                                MouseLeftButtonUp="OnNewsItemClick"
+                                Style="{StaticResource HoverCard}">
+                                <Grid>
+                                    <Image Source="{Binding ImagePath}" Stretch="UniformToFill" />
+
+                                    <Border>
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0.32" EndPoint="0,1">
+                                                <GradientStop Offset="0" Color="#00000000" />
+                                                <GradientStop Offset="1" Color="#E6000000" />
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                    </Border>
+
+                                    <StackPanel Margin="14,0,14,12" VerticalAlignment="Bottom">
+                                        <TextBlock
+                                            MaxHeight="46"
+                                            FontFamily="{StaticResource AppFont}"
+                                            FontSize="{StaticResource FontSizeBodyLarge}"
+                                            FontWeight="SemiBold"
+                                            Foreground="{StaticResource AppOnImageTextBrush}"
+                                            Text="{Binding Title}"
+                                            TextTrimming="CharacterEllipsis"
+                                            TextWrapping="Wrap" />
+                                        <TextBlock
+                                            Margin="0,4,0,0"
+                                            FontSize="{StaticResource FontSizeCaption}"
+                                            Foreground="{StaticResource AppOnImageTextBrush}"
+                                            Opacity="0.75"
+                                            Text="{Binding Date}" />
+                                    </StackPanel>
+                                </Grid>
+                            </ui:Card>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+
+        <ui:SnackbarPresenter
+            x:Name="SnackbarPresenter"
+            Grid.ColumnSpan="2"
+            Panel.ZIndex="2" />
+    </Grid>
+</Page>

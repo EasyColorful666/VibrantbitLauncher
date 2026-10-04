@@ -1,4 +1,4 @@
-using MinecraftLaunch.Base.Models.Network;
+﻿using MinecraftLaunch.Base.Models.Network;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -16,6 +16,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using VibrantbitLauncher.Services;
 using VibrantbitLauncher.ViewModels.Pages;
 using Wpf.Ui;
 using Wpf.Ui.Abstractions.Controls;
@@ -76,7 +77,7 @@ namespace VibrantbitLauncher.Views.Pages
                 // 后台线程获取所有版本数据
                 var allVersions = await Task.Run(async () =>
                 {
-                    var entries = await VanillaInstaller.EnumerableMinecraftAsync();
+                    var entries = await MinecraftVersionCache.GetAsync();
                     return entries.Select(entry => new McVersion
                     {
                         Version = entry.McVersion,

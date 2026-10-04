@@ -11,68 +11,28 @@
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d">
-    <Grid>
+
+    <Grid Margin="0,16,0,8">
         <Grid.Resources>
             <BitmapImage
                 x:Key="GrassIcon"
+                CacheOption="OnLoad"
                 DecodePixelWidth="50"
-                UriSource="/Assets/Grass_Block.png"
-                CacheOption="OnLoad" />
+                UriSource="/Assets/Grass_Block.png" />
         </Grid.Resources>
-        <ui:SnackbarPresenter x:Name="SnackbarPresenter" Margin="0,0,140,0" />
-        <ListBox
-            x:Name="listBox"
-            Margin="0,37,110,0"
-            ScrollViewer.CanContentScroll="True"
-            VirtualizingStackPanel.IsVirtualizing="True"
-            VirtualizingStackPanel.VirtualizationMode="Recycling"
-            VirtualizingStackPanel.CacheLength="20,0"
-            VirtualizingStackPanel.CacheLengthUnit="Item">
-            <ListBox.Background>
-                <SolidColorBrush Color="LightGray" />
-            </ListBox.Background>
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Margin="5" Orientation="Horizontal">
-                        <Image
-                            Width="50"
-                            Height="50"
-                            Margin="0,0,10,0"
-                            Source="{StaticResource GrassIcon}" />
-                        <StackPanel Width="200">
-                            <TextBlock FontWeight="Bold" Text="{Binding Version}" />
-                            <TextBlock Foreground="Green" Text="{Binding Date}" />
-                        </StackPanel>
-                        <Button
-                            Width="100"
-                            Height="30"
-                            Margin="190,0,0,0"
-                            Command="{Binding DataContext.DownloadCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                            CommandParameter="{Binding Version}"
-                            Content="下载" />
-                    </StackPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
         <ui:TextBox
             x:Name="textBox"
-            Width="607"
-            Height="26"
-            Margin="9,0,0,0"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Top"
-            FontSize="16"
-            RenderTransformOrigin="0.5,0.5"
+            Grid.Row="0"
+            MaxWidth="720"
+            Margin="0,0,0,12"
+            HorizontalAlignment="Stretch"
             TextChanged="TextBox_TextChanged"
             TextWrapping="Wrap">
-            <ui:TextBox.RenderTransform>
-                <TransformGroup>
-                    <ScaleTransform />
-                    <SkewTransform AngleY="0.095" />
-                    <RotateTransform />
-                    <TranslateTransform Y="0.498" />
-                </TransformGroup>
-            </ui:TextBox.RenderTransform>
             <ui:TextBox.Resources>
                 <VisualBrush
                     x:Key="HelpBrush"
@@ -81,11 +41,7 @@
                     Stretch="None"
                     TileMode="None">
                     <VisualBrush.Visual>
-                        <TextBlock
-                            Cursor=""
-                            FontSize="16"
-                            FontStyle="Italic"
-                            Text="查找版本" />
+                        <TextBlock Cursor="" Text="查找版本" />
                     </VisualBrush.Visual>
                 </VisualBrush>
             </ui:TextBox.Resources>
@@ -103,6 +59,69 @@
             </ui:TextBox.Style>
         </ui:TextBox>
 
+        <ListBox
+            x:Name="listBox"
+            Grid.Row="1"
+            Background="Transparent"
+            BorderThickness="0"
+            ScrollViewer.CanContentScroll="True"
+            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+            VirtualizingStackPanel.CacheLength="20,0"
+            VirtualizingStackPanel.CacheLengthUnit="Item"
+            VirtualizingStackPanel.IsVirtualizing="True"
+            VirtualizingStackPanel.VirtualizationMode="Recycling">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="Padding" Value="0" />
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <ui:Card
+                        Margin="0,0,0,6"
+                        Padding="14,10"
+                        Style="{StaticResource SurfaceCard}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
 
+                            <Image
+                                Grid.Column="0"
+                                Width="48"
+                                Height="48"
+                                Margin="0,0,14,0"
+                                Source="{StaticResource GrassIcon}" />
+
+                            <StackPanel
+                                Grid.Column="1"
+                                VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SubtitleText}" Text="{Binding Version}" />
+                                <TextBlock
+                                    Margin="0,2,0,0"
+                                    Style="{StaticResource CaptionText}"
+                                    Text="{Binding Date}" />
+                            </StackPanel>
+
+                            <ui:Button
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Command="{Binding DataContext.DownloadCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                CommandParameter="{Binding Version}"
+                                Content="下载"
+                                Icon="{ui:SymbolIcon Symbol=ArrowDownload24}" />
+                        </Grid>
+                    </ui:Card>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <ui:SnackbarPresenter
+            x:Name="SnackbarPresenter"
+            Grid.RowSpan="2"
+            Panel.ZIndex="2" />
     </Grid>
 </Page>

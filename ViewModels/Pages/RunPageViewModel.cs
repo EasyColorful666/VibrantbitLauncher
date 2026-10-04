@@ -1,4 +1,5 @@
-﻿using GalaSoft.MvvmLight.Messaging;
+﻿using VibrantbitLauncher.Helpers;
+using CommunityToolkit.Mvvm.Messaging;
 using MinecraftLaunch.Base.Models.Authentication;
 using MinecraftLaunch.Base.Models.Game;
 using MinecraftLaunch.Components.Authenticator;
@@ -17,14 +18,15 @@ using VibrantbitLauncher.Views.Pages;
 using VibrantbitLauncher.Views.Windows;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
-using Xunit.Internal;
 using System.Threading.Tasks;
 namespace VibrantbitLauncher.ViewModels.Pages
 {
-    public partial class RunPageViewModel : ViewModelBase
+    public partial class RunPageViewModel : ObservableObject
     {
-        private MinecraftParser minecraftParser = new(".\\.minecraft");
-        private List<JavaEntry> asyncJavas = [.. JavaUtil.EnumerableJavaAsync().ToBlockingEnumerable().ToList()];
+        // Java 列表由 LoadAsync() 在后台线程填充。
+        // 原实现在字段初始化器里同步枚举系统 Java（JavaUtil.EnumerableJavaAsync().ToBlockingEnumerable()），
+        // 会在候选路径为空时抛 ArgumentException，并把 UI 线程卡住；构造函数里不能做同步 IO。
+        private List<JavaEntry> asyncJavas = new();
         private ObservableCollection<MinecraftEntry> minecrafts = new ObservableCollection<MinecraftEntry>();
         private ObservableCollection<LocalVersion> minecraftVersions = new ObservableCollection<LocalVersion>();
         private ObservableCollection<string> javaVersions = new ObservableCollection<string>();
@@ -40,17 +42,17 @@ namespace VibrantbitLauncher.ViewModels.Pages
         public ObservableCollection<LocalVersion> MinecraftVersions
         {
             get => minecraftVersions;
-            set => Set(ref minecraftVersions, value);
+            set => SetProperty(ref minecraftVersions, value);
         }
         public string SelectedVersion
         {
             get => selectedVersion;
-            set => Set(ref selectedVersion, value);
+            set => SetProperty(ref selectedVersion, value);
         }
         public string AccountName
         {
             get => accountName;
-            set => Set(ref accountName, value);
+            set => SetProperty(ref accountName, value);
         }
 
         public RunPageViewModel()
@@ -103,11 +105,11 @@ namespace VibrantbitLauncher.ViewModels.Pages
 
         public async Task LoadAsync()
         {
-            await Task.Run(() =>
+            await Task.Run(async () =>
             {
                 try
                 {
-                    var javas = JavaUtil.EnumerableJavaAsync().ToBlockingEnumerable().ToList();
+                    var javas = await JavaHelper.FindJavasAsync();
                     asyncJavas = javas;
 
                     // 将设置中的自定义 Java 也加入列表
@@ -150,8 +152,15 @@ namespace VibrantbitLauncher.ViewModels.Pages
             IsLoaded = true;
         }
 
+        private int refreshing;
+
         private void Refresh()
         {
+            // 反复点导航会让 Loaded 重复触发。已有刷新在跑就直接忽略，
+            // 否则会累积多个扫盘任务并反复重建列表，表现为"点来点去越来越卡"。
+            if (Interlocked.CompareExchange(ref refreshing, 1, 0) != 0)
+                return;
+
             Task.Run(async () =>
             {
                 try
@@ -170,6 +179,10 @@ namespace VibrantbitLauncher.ViewModels.Pages
                 {
                     App.Current.Dispatcher.Invoke(() => snackbarService.Show("错误", $"无法刷新本地版本: {ex.Message}", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut));
                 }
+                finally
+                {
+                    Interlocked.Exchange(ref refreshing, 0);
+                }
             });
         }
 
@@ -183,8 +196,8 @@ namespace VibrantbitLauncher.ViewModels.Pages
         {
             if (!string.IsNullOrEmpty(McVersion))
             {
-                Messenger.Default.Send(McVersion, "McVersionForManage");
-                Messenger.Default.Send(typeof(VersionManagePage), "NavigateTo");
+                WeakReferenceMessenger.Default.Send<string, string>(McVersion, "McVersionForManage");
+                WeakReferenceMessenger.Default.Send<Type, string>(typeof(VersionManagePage), "NavigateTo");
             }
             else
             {
@@ -224,7 +237,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
                 Diag($"=== Launch start: {McVersion} ===");
 
                 // 用设置中的游戏目录初始化 parser
-                var mcFolder = MainWindowViewModel.MainModel.MinecraftFolder ?? ".\\.minecraft";
+                var mcFolder = SettingsService.ResolveMinecraftFolder();
                 Diag($"mcFolder: {mcFolder}");
                 var parser = new MinecraftParser(mcFolder);
 

@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Reflection;
 using System.Windows.Threading;
 using VibrantbitLauncher.Services;
@@ -9,6 +9,7 @@ using VibrantbitLauncher.Views.Windows;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Serilog;
 using Wpf.Ui;
 using Wpf.Ui.DependencyInjection;
 using MinecraftLaunch;
@@ -48,6 +49,8 @@ namespace VibrantbitLauncher
 
                 services.AddSingleton<DashboardPage>();
                 services.AddSingleton<DashboardPageViewModel>();
+                services.AddSingleton<LaunchPage>();
+                services.AddSingleton<NewsDetailPage>();
                 services.AddSingleton<AccountPage>();
                 services.AddSingleton<AccountPageViewModel>();
                 services.AddSingleton<DownloadPage>();
@@ -69,6 +72,12 @@ namespace VibrantbitLauncher
                 services.AddSingleton<VersionManageViewModel>();
                 services.AddSingleton<SettingsPage>();
                 services.AddSingleton<SettingsPageViewModel>();
+                // 欢迎流程页面：注册进 DI，避免被导航时 _pageService.GetPage 返回 null 抛异常
+                services.AddSingleton<WelcomePage>();
+                services.AddSingleton<WelcomeSetupPage>();
+                services.AddSingleton<HelloEffectPage>();
+                services.AddSingleton<WelcomeAccountPage>();
+                services.AddSingleton<WelcomeCompletePage>();
             }).Build();
 
         /// <summary>
@@ -84,11 +93,22 @@ namespace VibrantbitLauncher
         /// </summary>
         private async void OnStartup(object sender, StartupEventArgs e)
         { 
+            InitLogging();
+            Log.Information("VibrantbitLauncher 启动");
+
             await _host.StartAsync();
+
+            // 后台预热版本清单，避免首次进入「下载中心」要等几秒才出列表
+            MinecraftVersionCache.Preload();
 
             // 加载配置并应用主题/主题色（自动完成，用户不可见）
             SettingsService.Load();
             SettingsService.ApplyTheme();
+            Log.Information("配置：Theme={Theme} IsFirstRun={First} MinecraftFolder={Folder} JavaPath={Java}",
+                SettingsService.Current.Theme,
+                SettingsService.Current.IsFirstRun,
+                SettingsService.Current.MinecraftFolder,
+                string.IsNullOrEmpty(SettingsService.Current.JavaPath) ? "(未设置)" : SettingsService.Current.JavaPath);
 
             InitializeHelper.Initialize(settings => {
                 settings.MaxThread = 256; // 最大下载线程
@@ -128,6 +148,43 @@ namespace VibrantbitLauncher
             await _host.StopAsync();
 
             _host.Dispose();
+
+            Log.CloseAndFlush();
+        }
+
+        /// <summary>
+        /// 初始化日志：写入 logs/ 目录，并接管全局未处理异常。
+        /// 原先未处理异常只被写入 Debug 输出后直接吞掉，出问题时无从排查。
+        /// </summary>
+        private static void InitLogging()
+        {
+            try
+            {
+                var logDir = Path.Combine(AppContext.BaseDirectory, "logs");
+                Directory.CreateDirectory(logDir);
+
+                Log.Logger = new LoggerConfiguration()
+                    .MinimumLevel.Information()
+                    .WriteTo.File(
+                        Path.Combine(logDir, "vibrantbit-.log"),
+                        rollingInterval: RollingInterval.Day,
+                        retainedFileCountLimit: 7,
+                        shared: true)
+                    .CreateLogger();
+
+                AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+                    Log.Fatal(args.ExceptionObject as Exception, "未处理的应用域异常");
+
+                TaskScheduler.UnobservedTaskException += (_, args) =>
+                {
+                    Log.Error(args.Exception, "未观察到的任务异常");
+                    args.SetObserved();
+                };
+            }
+            catch
+            {
+                // 日志初始化失败不应影响启动
+            }
         }
 
         /// <summary>
@@ -135,7 +192,7 @@ namespace VibrantbitLauncher
         /// </summary>
         private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            System.Diagnostics.Debug.WriteLine($"[Unhandled] {e.Exception}");
+            Log.Error(e.Exception, "未处理的 UI 线程异常");
             e.Handled = true;
         }
 

@@ -1,41 +1,114 @@
-using GalaSoft.MvvmLight.Messaging;
+﻿using CommunityToolkit.Mvvm.Messaging;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Navigation;
+using VibrantbitLauncher.Models;
 
 namespace VibrantbitLauncher.Views.Pages
 {
+    /// <summary>
+    /// 下载中心：左侧分类单选栏 + 右侧内容区。
+    ///
+    /// 每个分类独占一个 Frame + 页面实例，切换只改 Visibility ——
+    /// 避免 Frame.Content 反复赋值导致整棵视觉树被卸载重建（切换卡顿的根源）。
+    /// </summary>
     public partial class DownloadHubPage : Page
     {
-        private readonly DownloadPage _downloadPage;
-        private readonly DownloadResourcesPage _downloadResourcesPage;
-        private bool _modTabLoaded;
+        /// <summary>分类序号 → Modrinth 项目类型；0 是原版游戏，不走 Modrinth。</summary>
+        private static readonly string[] ResourceTypes = { "mod", "modpack", "resourcepack", "shader" };
 
-        public DownloadHubPage(DownloadPage downloadPage, DownloadResourcesPage downloadResourcesPage)
+        private readonly Dictionary<int, Frame> _resourceFrames = new();
+        private DownloadPage? _downloadPage;
+
+        public DownloadHubPage()
         {
             InitializeComponent();
-            _downloadPage = downloadPage;
-            _downloadResourcesPage = downloadResourcesPage;
 
-            // 默认只加载第一个 Tab（游戏版本）
-            VersionFrame.Content = _downloadPage;
+            // InitializeComponent 期间 XAML 的 IsSelected="True" 会触发 SelectionChanged，
+            // 那时容器还没建好，这里按当前选中项补一次。
+            ApplyCurrentCategory();
 
-            MainTabControl.SelectionChanged += OnTabChanged;
-
-            // 接收下载任务中心的 Tab 切换请求
-            Messenger.Default.Register<int>(this, "DownloadHubTab", index =>
-            {
-                if (index >= 0 && index < MainTabControl.Items.Count)
-                    MainTabControl.SelectedIndex = index;
-            });
+            // 接收下载任务中心的分类切换请求（0 = 原版游戏，1 = Mod）
+            WeakReferenceMessenger.Default.Register<DownloadHubTabMessage>(this, (_, message) => SelectCategory(message.Index));
         }
 
-        private void OnTabChanged(object sender, SelectionChangedEventArgs e)
+        private void CategoryList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+            => ApplyCurrentCategory();
+
+        /// <summary>按左侧当前选中项切换右侧内容；分组标题（Tag 非数字）会被忽略。</summary>
+        private void ApplyCurrentCategory()
         {
-            // 懒加载：第一次切换到"模组资源"时才创建 Frame 内容
-            if (MainTabControl.SelectedIndex == 1 && !_modTabLoaded)
+            if (VersionFrame == null)
+                return;
+
+            if (CategoryList.SelectedItem is not ListBoxItem item
+                || item.Tag is not string tag
+                || !int.TryParse(tag, out var index))
             {
-                ModFrame.Content = _downloadResourcesPage;
-                _modTabLoaded = true;
+                return;
             }
+
+            var watch = Stopwatch.StartNew();
+
+            if (index <= 0)
+                ShowVersionPage();
+            else
+                ShowResourcePage(index);
+
+            Serilog.Log.Information("[Hub] 切换分类 {Index}，耗时 {Ms}ms（首次含页面构造）", index, watch.ElapsedMilliseconds);
+        }
+
+        private void ShowVersionPage()
+        {
+            _downloadPage ??= App.Services.GetService(typeof(DownloadPage)) as DownloadPage;
+            if (_downloadPage != null && VersionFrame.Content == null)
+                VersionFrame.Content = _downloadPage;
+
+            VersionFrame.Visibility = Visibility.Visible;
+
+            foreach (var frame in _resourceFrames.Values)
+                frame.Visibility = Visibility.Collapsed;
+        }
+
+        private void ShowResourcePage(int index)
+        {
+            if (!_resourceFrames.TryGetValue(index, out var frame))
+            {
+                var projectType = index - 1 < ResourceTypes.Length ? ResourceTypes[index - 1] : ResourceTypes[0];
+
+                var page = new DownloadResourcesPage();
+                page.SetProjectType(projectType);
+
+                frame = new Frame
+                {
+                    Content = page,
+                    Visibility = Visibility.Collapsed,
+                    NavigationUIVisibility = NavigationUIVisibility.Hidden,
+                    JournalOwnership = JournalOwnership.OwnsJournal
+                };
+
+                HostGrid.Children.Add(frame);
+                _resourceFrames[index] = frame;
+            }
+
+            VersionFrame.Visibility = Visibility.Collapsed;
+
+            foreach (var pair in _resourceFrames)
+                pair.Value.Visibility = pair.Key == index ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        /// <summary>按分类序号选中左侧对应项；内容切换由 SelectionChanged 统一驱动。</summary>
+        private void SelectCategory(int index)
+        {
+            var target = CategoryList.Items
+                .OfType<ListBoxItem>()
+                .FirstOrDefault(li => li.Tag is string tag && tag == index.ToString());
+
+            if (target != null && !ReferenceEquals(CategoryList.SelectedItem, target))
+                CategoryList.SelectedItem = target;
         }
     }
 }

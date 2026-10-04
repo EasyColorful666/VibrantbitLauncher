@@ -1,4 +1,4 @@
-using MinecraftLaunch.Base.Models.Authentication;
+﻿using MinecraftLaunch.Base.Models.Authentication;
 using MinecraftLaunch.Base.Models.Authentication.Yggdrasil;
 using System;
 using System.Collections.Generic;
@@ -48,18 +48,31 @@ namespace VibrantbitLauncher.Services
 
         public static AppSettings Current { get; private set; } = new();
 
+        /// <summary>
+        /// 取当前生效的 .minecraft 目录；未配置时回退到工作目录下的 ./.minecraft。
+        /// 页面里不要再硬编码 "./.minecraft" 或 ".\\.minecraft"。
+        /// </summary>
+        public static string ResolveMinecraftFolder()
+        {
+            var folder = MainWindowViewModel.MainModel.MinecraftFolder;
+            return string.IsNullOrWhiteSpace(folder) ? "./.minecraft" : folder;
+        }
         public static void Load()
         {
             try
             {
                 if (File.Exists(ConfigPath))
                 {
-                    var json = File.ReadAllText(ConfigPath);
+                    // 有些编辑器 / 脚本会写入 UTF-8 BOM，JsonSerializer 不接受，这里显式去掉
+                    var json = File.ReadAllText(ConfigPath).TrimStart('\uFEFF');
                     Current = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? new AppSettings();
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                // 以前是静默 catch：解析失败就回退默认值（IsFirstRun = true），
+                // 表现是「每次启动都弹开机向导、所有设置丢失」。现在至少留下日志。
+                Serilog.Log.Error(ex, "配置文件解析失败，已回退到默认设置：{Path}", ConfigPath);
                 Current = new AppSettings();
             }
 

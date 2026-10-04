@@ -1,4 +1,4 @@
-using GalaSoft.MvvmLight;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 
 namespace VibrantbitLauncher.Models
@@ -19,7 +19,7 @@ namespace VibrantbitLauncher.Models
         Other
     }
 
-    public class DownloadTaskItem : ViewModelBase
+    public class DownloadTaskItem : ObservableObject
     {
         private int _progress;
         private string _speed = string.Empty;
@@ -34,19 +34,19 @@ namespace VibrantbitLauncher.Models
         public int Progress
         {
             get => _progress;
-            set => Set(ref _progress, value);
+            set => SetProperty(ref _progress, value);
         }
 
         public string Speed
         {
             get => _speed;
-            set => Set(ref _speed, value);
+            set => SetProperty(ref _speed, value);
         }
 
         public string StatusText
         {
             get => _statusText;
-            set => Set(ref _statusText, value);
+            set => SetProperty(ref _statusText, value);
         }
 
         public DownloadTaskStatus Status
@@ -54,9 +54,9 @@ namespace VibrantbitLauncher.Models
             get => _status;
             set
             {
-                Set(ref _status, value);
-                RaisePropertyChanged(nameof(StatusDisplay));
-                RaisePropertyChanged(nameof(IsActive));
+                SetProperty(ref _status, value);
+                OnPropertyChanged(nameof(StatusDisplay));
+                OnPropertyChanged(nameof(IsActive));
             }
         }
 

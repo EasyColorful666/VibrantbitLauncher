@@ -1,8 +1,8 @@
-using VibrantbitLauncher.ViewModels.Pages;
+﻿using VibrantbitLauncher.ViewModels.Pages;
 using VibrantbitLauncher.ViewModels.Windows;
 using System.Windows.Controls;
 using System;
-using GalaSoft.MvvmLight.Messaging;
+using CommunityToolkit.Mvvm.Messaging;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
 using VibrantbitLauncher.Views.Windows;
@@ -18,7 +18,7 @@ namespace VibrantbitLauncher.Views.Pages
         public InstallPage()
         {
             InitializeComponent();
-            Messenger.Default.Register<string>(this, "McVersion", SetMcVersion);
+            WeakReferenceMessenger.Default.Register<string, string>(this, "McVersion", (_, m) => SetMcVersion(m));
             snackbarService.SetSnackbarPresenter(SnackbarPresenter);
         }
 

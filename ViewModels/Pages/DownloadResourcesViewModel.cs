@@ -1,5 +1,5 @@
-using GalaSoft.MvvmLight;
-using GalaSoft.MvvmLight.CommandWpf;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using MinecraftLaunch.Base.Enums;
 using MinecraftLaunch.Components.Installer;
 using MinecraftLaunch.Components.Provider;
@@ -10,12 +10,14 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using UiMessageBox = Wpf.Ui.Controls.MessageBox;
+using VibrantbitLauncher.Services;
+using VibrantbitLauncher.Services;
 
 namespace VibrantbitLauncher.ViewModels.Pages
 {
-    public class DownloadResourcesViewModel : ViewModelBase
+    public class DownloadResourcesViewModel : ObservableObject
     {
-        private readonly ModrinthProvider provider = new();
+        private string _projectType = ModrinthSearchService.TypeMod;
         private ObservableCollection<ModrinthMod> modrinthMods = new();
 
         // 筛选
@@ -24,10 +26,26 @@ namespace VibrantbitLauncher.ViewModels.Pages
         private string _lastSearchText = string.Empty;
         private bool _isInitialized = false;
 
+        /// <summary>当前分类对应的 Modrinth 项目类型（mod / modpack / resourcepack / shader）。</summary>
+        public string ProjectType => _projectType;
+
+        /// <summary>切换分类：换类型并重新拉一遍列表。</summary>
+        public void SetProjectType(string projectType)
+        {
+            if (string.Equals(_projectType, projectType, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            _projectType = projectType;
+            _lastSearchText = string.Empty;
+            modrinthMods.Clear();
+
+            _ = LoadResourcesAsync();
+        }
+
         public ObservableCollection<ModrinthMod> ModrinthMods
         {
             get => modrinthMods;
-            set => Set(ref modrinthMods, value);
+            set => SetProperty(ref modrinthMods, value);
         }
 
         /// <summary>可选 Minecraft 版本（异步从 VanillaInstaller 加载）。</summary>
@@ -44,7 +62,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
             get => _selectedVersion;
             set
             {
-                if (Set(ref _selectedVersion, value) && _isInitialized)
+                if (SetProperty(ref _selectedVersion, value) && _isInitialized)
                     _ = ApplyFilterAsync();
             }
         }
@@ -54,7 +72,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
             get => _selectedLoader;
             set
             {
-                if (Set(ref _selectedLoader, value) && _isInitialized)
+                if (SetProperty(ref _selectedLoader, value) && _isInitialized)
                     _ = ApplyFilterAsync();
             }
         }
@@ -83,7 +101,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
 
                 var versions = await Task.Run(async () =>
                 {
-                    var entries = await VanillaInstaller.EnumerableMinecraftAsync();
+                    var entries = await MinecraftVersionCache.GetAsync();
                     return entries.Select(v => v.Id).ToList();
                 });
 
@@ -123,7 +141,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
                     }
                     else
                     {
-                        var results = await provider.SearchAsync(_lastSearchText);
+                        var results = await ModrinthSearchService.SearchAsync(_projectType, _lastSearchText);
                         AddMods(results);
                     }
                     return;
@@ -133,20 +151,11 @@ namespace VibrantbitLauncher.ViewModels.Pages
                 var version = SelectedVersion == "全部" ? null : SelectedVersion;
                 var modLoader = SelectedLoader == "全部" ? (ModLoaderType?)null : ParseModLoader(SelectedLoader);
 
-                IEnumerable<dynamic> results2;
-                if (modLoader.HasValue)
-                {
-                    results2 = await provider.SearchAsync(
-                        searchFilter: _lastSearchText ?? string.Empty,
-                        version: version,
-                        modLoader: modLoader.Value);
-                }
-                else
-                {
-                    results2 = await provider.SearchAsync(
-                        searchFilter: _lastSearchText ?? string.Empty,
-                        version: version);
-                }
+                var results2 = await ModrinthSearchService.SearchAsync(
+                    _projectType,
+                    _lastSearchText,
+                    version,
+                    modLoader.HasValue ? SelectedLoader : null);
 
                 AddMods(results2);
             }
@@ -174,16 +183,16 @@ namespace VibrantbitLauncher.ViewModels.Pages
         /// <summary>
         /// 将搜索结果转换为 ModrinthMod 列表。
         /// </summary>
-        private void AddMods(IEnumerable mods)
+        private void AddMods(IEnumerable<ModrinthSearchService.Hit> hits)
         {
-            foreach (dynamic mod in mods)
+            foreach (var hit in hits)
             {
                 modrinthMods.Add(new ModrinthMod
                 {
-                    Name = mod.Name ?? "",
-                    ImagePath = mod.IconUrl ?? "",
-                    MinecraftVersions = (mod.MinecraftVersions as List<string>)?.LastOrDefault() + "+",
-                    ProjectId = mod.ProjectId ?? ""
+                    Name = hit.Title,
+                    ImagePath = hit.IconUrl ?? "",
+                    MinecraftVersions = hit.Versions.LastOrDefault() + "+",
+                    ProjectId = hit.ProjectId
                 });
             }
         }
@@ -192,17 +201,8 @@ namespace VibrantbitLauncher.ViewModels.Pages
         {
             try
             {
-                var resourceslist = await provider.GetFeaturedResourcesAsync();
-                foreach (var mod in resourceslist)
-                {
-                    modrinthMods.Add(new ModrinthMod
-                    {
-                        Name = mod.Name,
-                        ImagePath = mod.IconUrl,
-                        MinecraftVersions = mod.MinecraftVersions.FirstOrDefault() + "+",
-                        ProjectId = mod.ProjectId
-                    });
-                }
+                var resourceslist = await ModrinthSearchService.SearchAsync(_projectType, gameVersion: null, loader: null);
+                AddMods(resourceslist);
             }
             catch (Exception ex)
             {

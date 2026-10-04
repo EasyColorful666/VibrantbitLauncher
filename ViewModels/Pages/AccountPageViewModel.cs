@@ -1,6 +1,6 @@
-﻿using GalaSoft.MvvmLight;
-using GalaSoft.MvvmLight.CommandWpf;
-using GalaSoft.MvvmLight.Messaging;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using MinecraftLaunch.Base.Models.Authentication;
 using MinecraftLaunch.Base.Models.Authentication.Yggdrasil;
 using MinecraftLaunch.Components.Authenticator;
@@ -26,7 +26,7 @@ using UiMessageBox = Wpf.Ui.Controls.MessageBox;
 
 namespace VibrantbitLauncher.ViewModels.Pages
 {
-    public partial class AccountPageViewModel : ViewModelBase
+    public partial class AccountPageViewModel : ObservableObject
     {
         private SnackbarService snackbarService = new();
         ObservableCollection<User> users = new();
@@ -43,14 +43,14 @@ namespace VibrantbitLauncher.ViewModels.Pages
         public ObservableCollection<User> Users
         {
             get => users;
-            set => Set(ref users, value);
+            set => SetProperty(ref users, value);
         }
         public bool IsLoaded { get; set; }
         public AccountPageViewModel()
         {
             IsLoaded = false;
-            Messenger.Default.Register<YggdrasilAccountProfile>(this, "YggdrasilAccountProfile", NewYggdrasilAccountProfile);
-            Messenger.Default.Register<string>(this, "OfflineAccountProfile", NewOfflineAccountProfile);
+            WeakReferenceMessenger.Default.Register<YggdrasilAccountProfile, string>(this, "YggdrasilAccountProfile", (_, m) => NewYggdrasilAccountProfile(m));
+            WeakReferenceMessenger.Default.Register<string, string>(this, "OfflineAccountProfile", (_, m) => NewOfflineAccountProfile(m));
             AuthenticateMicrosoftCommand = new RelayCommand(AuthenticateMicrosoftAsync);
             AuthenticateYggdrasilCommand = new RelayCommand(AuthenticateYggdrasilAsync);
             AuthenticateOfflineCommand = new RelayCommand(AuthenticateOffline);

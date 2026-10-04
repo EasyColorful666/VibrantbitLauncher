@@ -1,17 +1,17 @@
-using VibrantbitLauncher.Models;
-using GalaSoft.MvvmLight;
-using GalaSoft.MvvmLight.CommandWpf;
+﻿using VibrantbitLauncher.Models;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
-using GalaSoft.MvvmLight.Messaging;
+using CommunityToolkit.Mvvm.Messaging;
 
 namespace VibrantbitLauncher.ViewModels.Windows
 {
-    public class MainWindowViewModel : ViewModelBase
+    public class MainWindowViewModel : ObservableObject
     {
         static MainModel _mainModel = new();
         static public MainModel MainModel {  get { return _mainModel; } set { _mainModel = value; } } 
@@ -21,7 +21,7 @@ namespace VibrantbitLauncher.ViewModels.Windows
         public string ImagePath
         {
             get => imagePath;
-            set => Set(ref imagePath, value);
+            set => SetProperty(ref imagePath, value);
         }
         public MainWindowViewModel(INavigationService navigationService)
         {
@@ -32,8 +32,8 @@ namespace VibrantbitLauncher.ViewModels.Windows
             OpenSettingsCommand = new RelayCommand(OpenSettings);
             ApplicationExitCommand = new RelayCommand(ApplicationExit);
 
-            Messenger.Default.Register<string>(this, "UpdateImagePath", UpdateImagePath);
-            Messenger.Default.Register<Type>(this, "NavigateTo", NavigateToPage);
+            WeakReferenceMessenger.Default.Register<string, string>(this, "UpdateImagePath", (_, m) => UpdateImagePath(m));
+            WeakReferenceMessenger.Default.Register<Type, string>(this, "NavigateTo", (_, m) => NavigateToPage(m));
             InitializeMenuItems();
         }
 
@@ -53,7 +53,7 @@ namespace VibrantbitLauncher.ViewModels.Windows
         public ObservableCollection<MenuItemViewModel> TrayMenuItems
         {
             get => _trayMenuItems;
-            set => Set(ref _trayMenuItems, value);
+            set => SetProperty(ref _trayMenuItems, value);
         }
         #endregion
 
@@ -93,7 +93,7 @@ namespace VibrantbitLauncher.ViewModels.Windows
         #endregion
     }
 
-    public class MenuItemViewModel : ViewModelBase
+    public class MenuItemViewModel : ObservableObject
     {
         public string Header { get; set; }
         public RelayCommand Command { get; set; }

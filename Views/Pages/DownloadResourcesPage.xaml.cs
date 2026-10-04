@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -14,6 +14,13 @@ namespace VibrantbitLauncher.Views.Pages
         public DownloadResourcesPage()
         {
             InitializeComponent();
+        }
+
+        /// <summary>由下载中心在切换分类时调用，指定这个页面展示哪一类资源。</summary>
+        public void SetProjectType(string projectType)
+        {
+            if (DataContext is DownloadResourcesViewModel vm)
+                vm.SetProjectType(projectType);
         }
 
         private async void OnDownloadClick(object sender, RoutedEventArgs e)

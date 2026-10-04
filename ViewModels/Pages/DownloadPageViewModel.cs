@@ -1,8 +1,8 @@
 ﻿using System.Windows.Media;
 using VibrantbitLauncher.Models;
 using Wpf.Ui.Abstractions.Controls;
-using GalaSoft.MvvmLight.CommandWpf;
-using GalaSoft.MvvmLight;
+using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.ComponentModel;
 using MinecraftLaunch.Launch;
 using MinecraftLaunch.Base;
 using MinecraftLaunch.Components;
@@ -12,13 +12,13 @@ using VibrantbitLauncher.ViewModels.Windows;
 using MinecraftLaunch.Components.Installer;
 using VibrantbitLauncher.Views.Windows;
 using VibrantbitLauncher.Views.Pages;
-using GalaSoft.MvvmLight.Messaging;
+using CommunityToolkit.Mvvm.Messaging;
 using System.Windows;
 using System.Collections.ObjectModel;
 
 namespace VibrantbitLauncher.ViewModels.Pages
 {
-    public class DownloadPageViewModel : ViewModelBase
+    public class DownloadPageViewModel : ObservableObject
     {
         public List<IInstallEntry> installEntries = new();
         private string mcFolder;
@@ -28,7 +28,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
         public ObservableCollection<McVersion> McVersions
         {
             get => mcVersions;
-            set => Set(ref mcVersions, value);
+            set => SetProperty(ref mcVersions, value);
         }
         public RelayCommand<string> DownloadCommand { get; }
         public bool IsLoaded { get; set; }
@@ -51,7 +51,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
             {
                 InstallPage installPage = new();
                 _mainWindow.Navigate(installPage.GetType());
-                Messenger.Default.Send<String>(McVersion, "McVersion");
+                WeakReferenceMessenger.Default.Send<string, string>(McVersion, "McVersion");
 
             }
         }

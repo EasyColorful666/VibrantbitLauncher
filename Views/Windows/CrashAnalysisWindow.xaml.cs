@@ -29,7 +29,7 @@ namespace VibrantbitLauncher.Views.Windows
             if (SuspiciousModsList.Items.Count == 0)
                 SuspiciousModsList.Items.Add("未检测到可疑模组。");
 
-            var mcFolder = Path.Combine(AppContext.BaseDirectory, ".minecraft");
+            var mcFolder = Path.GetFullPath(VibrantbitLauncher.Services.SettingsService.ResolveMinecraftFolder());
             _crashReportFolder = Path.Combine(mcFolder, "crash-reports");
         }
 

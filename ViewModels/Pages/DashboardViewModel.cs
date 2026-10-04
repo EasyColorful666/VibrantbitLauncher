@@ -1,5 +1,5 @@
 ﻿using Flurl.Http;
-using GalaSoft.MvvmLight;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -11,7 +11,7 @@ using System.Text.RegularExpressions;
 using VibrantbitLauncher.Helpers;
 namespace VibrantbitLauncher.ViewModels.Pages
 {
-    public class DashboardPageViewModel : ViewModelBase
+    public class DashboardPageViewModel : ObservableObject
     {
         public ObservableCollection<NewsItem> News { get; set; } = new ObservableCollection<NewsItem>();
         public bool IsLoaded { get; set; }

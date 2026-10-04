@@ -1,5 +1,6 @@
-using GalaSoft.MvvmLight;
-using GalaSoft.MvvmLight.CommandWpf;
+﻿using VibrantbitLauncher.Helpers;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using MinecraftLaunch.Base.Interfaces;
 using MinecraftLaunch.Base.Models.Game;
 using MinecraftLaunch.Base.Models.Network;
@@ -22,7 +23,7 @@ using Wpf.Ui.Controls;
 
 namespace VibrantbitLauncher.ViewModels.Pages
 {
-    public class InstallPageViewModel : ViewModelBase
+    public class InstallPageViewModel : ObservableObject
     {
         private string mcVersion = string.Empty;
         private string mcFolder = "./.minecraft";
@@ -47,85 +48,100 @@ namespace VibrantbitLauncher.ViewModels.Pages
         public List<string> ForgeVersions
         {
             get => forgeVersions;
-            set => Set(ref forgeVersions, value);
+            set => SetProperty(ref forgeVersions, value);
         }
         public List<string> FabricVersions
         {
             get => fabricVersions;
-            set => Set(ref fabricVersions, value);
+            set => SetProperty(ref fabricVersions, value);
         }
         public List<string> NeoforgeVersions
         {
             get => neoforgeVersions;
-            set => Set(ref neoforgeVersions, value);
+            set => SetProperty(ref neoforgeVersions, value);
         }
         public List<string> QuiltVersions
         {
             get => quiltVersions;
-            set => Set(ref quiltVersions, value);
+            set => SetProperty(ref quiltVersions, value);
         }
         public string McVersion
         {
             get => mcVersion;
-            set => Set(ref mcVersion, value);
+            set => SetProperty(ref mcVersion, value);
         }
         public string SelectForgeVersion
         {
             get => selectForgeVersion;
-            set => Set(ref selectForgeVersion, value);
+            set => SetProperty(ref selectForgeVersion, value);
         }
         public string SelectFabricVersion
         {
             get => selectFabricVersion;
-            set => Set(ref selectFabricVersion, value);
+            set => SetProperty(ref selectFabricVersion, value);
         }
         public string SelectNeoforgeVersion
         {
             get => selectNeoforgeVersion;
-            set => Set(ref selectNeoforgeVersion, value);
+            set => SetProperty(ref selectNeoforgeVersion, value);
         }
         public string SelectQuiltVersion
         {
             get => selectQuiltVersion;
-            set => Set(ref selectQuiltVersion, value);
+            set => SetProperty(ref selectQuiltVersion, value);
         }
         public int InstallProgress
         {
             get => installProgress;
-            set => Set(ref installProgress, value);
+            set => SetProperty(ref installProgress, value);
         }
         public string InstallStep
         {
             get => installStep;
-            set => Set(ref installStep, value);
+            set => SetProperty(ref installStep, value);
         }
         public string Speed
         {
             get => speed;
-            set => Set(ref speed, value);
+            set => SetProperty(ref speed, value);
         }
         public bool IsLoading
         {
             get => isLoading;
             set
             {
-                Set(ref isLoading, value);
-                RaisePropertyChanged(nameof(CanInstall));
-                InstallCommand?.RaiseCanExecuteChanged();
+                SetProperty(ref isLoading, value);
+                OnPropertyChanged(nameof(CanInstall));
+                InstallCommand?.NotifyCanExecuteChanged();
             }
         }
         public bool CanInstall => !IsLoading;
         public bool CanRefresh => !IsLoading;
+
+        /// <summary>
+        /// 安全地取第一个可用的 Java 路径；枚举过程失败或没有候选时返回 null。
+        /// </summary>
+        private static async Task<string?> GetFirstJavaPathAsync()
+        {
+            try
+            {
+                return await JavaHelper.FindFirstJavaPathAsync();
+            }
+            catch
+            {
+                return null;
+            }
+        }
 
         private bool forgeAvailable = true;
         private bool fabricAvailable = true;
         private bool neoforgeAvailable = true;
         private bool quiltAvailable = true;
 
-        public bool ForgeAvailable { get => forgeAvailable; set => Set(ref forgeAvailable, value); }
-        public bool FabricAvailable { get => fabricAvailable; set => Set(ref fabricAvailable, value); }
-        public bool NeoforgeAvailable { get => neoforgeAvailable; set => Set(ref neoforgeAvailable, value); }
-        public bool QuiltAvailable { get => quiltAvailable; set => Set(ref quiltAvailable, value); }
+        public bool ForgeAvailable { get => forgeAvailable; set => SetProperty(ref forgeAvailable, value); }
+        public bool FabricAvailable { get => fabricAvailable; set => SetProperty(ref fabricAvailable, value); }
+        public bool NeoforgeAvailable { get => neoforgeAvailable; set => SetProperty(ref neoforgeAvailable, value); }
+        public bool QuiltAvailable { get => quiltAvailable; set => SetProperty(ref quiltAvailable, value); }
 
         public InstallPageViewModel(string McVersion)
         {
@@ -136,10 +152,19 @@ namespace VibrantbitLauncher.ViewModels.Pages
             LoadCommand = new RelayCommand<SnackbarPresenter>(async (presenter) => await Load(presenter));
         }
 
+        private string? versionsLoadedFor;
+
         public async Task Load(SnackbarPresenter snackbarPresenter)
         {
             this.snackbarService.SetSnackbarPresenter(snackbarPresenter);
+
+            // 进入安装页时 SetMcVersion 和页面 Loaded 都会触发加载。
+            // 这里按版本号防重，避免同一次导航重复发起 4 个加载器的在线查询。
+            if (string.Equals(versionsLoadedFor, mcVersion, StringComparison.OrdinalIgnoreCase))
+                return;
+
             await LoadVersionsAsync();
+            versionsLoadedFor = mcVersion;
         }
 
         public async Task LoadVersionsAsync()
@@ -216,7 +241,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
             InstallProgress = 0;
             InstallStep = string.Empty;
             Speed = string.Empty;
-            var javaList = await JavaUtil.EnumerableJavaAsync().ToListAsync();
+            var javaList = await JavaHelper.FindJavasAsync();
             var asyncJavas = javaList.ToList();
 
             if (asyncJavas.Count == 0)
@@ -241,7 +266,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
                 {
                     App.Current.Dispatcher.Invoke((Action)(() =>
                         snackbarService.Show("提示", $"正在安装原版 {mcVersion}...", ControlAppearance.Info, null, snackbarService.DefaultTimeOut)));
-                    var vanillas = await VanillaInstaller.EnumerableMinecraftAsync();
+                    var vanillas = await VibrantbitLauncher.Services.MinecraftVersionCache.GetAsync();
                     var vanillaEntry = vanillas.FirstOrDefault(x => x.McVersion == mcVersion);
                     if (vanillaEntry == null)
                     {
@@ -263,6 +288,20 @@ namespace VibrantbitLauncher.ViewModels.Pages
                 }
             }
 
+            // Forge / NeoForge 的安装器需要一个 Java 路径。
+            // 原实现直接 .First()，没有可用 Java 时会抛 InvalidOperationException（枚举本身也可能抛）。
+            string? installerJavaPath = null;
+            if (!string.IsNullOrEmpty(SelectForgeVersion) || !string.IsNullOrEmpty(SelectNeoforgeVersion))
+            {
+                installerJavaPath = await GetFirstJavaPathAsync();
+                if (installerJavaPath == null)
+                {
+                    snackbarService.Show("错误", "未检测到可用的 Java 运行环境，请先在设置里配置 Java 路径", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut);
+                    IsLoading = false;
+                    return;
+                }
+            }
+
             // 确定安装器和入口
             InstallerBase installer = null;
             IInstallEntry entry;
@@ -273,7 +312,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
                 var forges = await ForgeInstaller.EnumerableForgeAsync(mcVersion);
                 entry = forges.FirstOrDefault(x => string.Equals(x.DisplayVersion, SelectForgeVersion, StringComparison.OrdinalIgnoreCase));
                 if (entry == null) { snackbarService.Show("错误", $"未找到 Forge 版本: {SelectForgeVersion}", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut); IsLoading = false; return; }
-                installer = ForgeInstaller.Create(mcFolder,JavaUtil.EnumerableJavaAsync().ToBlockingEnumerable().First().JavaPath, (ForgeInstallEntry)entry, $"{mcVersion}_forge_{SelectForgeVersion}");
+                installer = ForgeInstaller.Create(mcFolder, installerJavaPath!, (ForgeInstallEntry)entry, $"{mcVersion}_forge_{SelectForgeVersion}");
                 taskName = $"安装 Forge {SelectForgeVersion}";
             }
             else if (!string.IsNullOrEmpty(SelectFabricVersion))
@@ -305,12 +344,12 @@ namespace VibrantbitLauncher.ViewModels.Pages
                 var neoforges = (await ForgeInstaller.EnumerableForgeAsync(mcVersion,true)).ToList();
                 entry = neoforges.FirstOrDefault(x => string.Equals(x.DisplayVersion, SelectNeoforgeVersion, StringComparison.OrdinalIgnoreCase));
                 if (entry == null) { snackbarService.Show("错误", $"未找到 NeoForge 版本: {SelectNeoforgeVersion}", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut); IsLoading = false; return; }
-                installer = ForgeInstaller.Create(mcFolder, JavaUtil.EnumerableJavaAsync().ToBlockingEnumerable().First().JavaPath, (ForgeInstallEntry)entry, $"{mcVersion}_neoforge_{SelectNeoforgeVersion}");
+                installer = ForgeInstaller.Create(mcFolder, installerJavaPath!, (ForgeInstallEntry)entry, $"{mcVersion}_neoforge_{SelectNeoforgeVersion}");
                 taskName = $"安装 NeoForge {SelectNeoforgeVersion}";
             }
             else
             {
-                var vanillas = await VanillaInstaller.EnumerableMinecraftAsync();
+                var vanillas = await VibrantbitLauncher.Services.MinecraftVersionCache.GetAsync();
                 entry = vanillas.FirstOrDefault(x => x.McVersion == mcVersion);
                 if (entry == null) { snackbarService.Show("错误", $"未找到原版版本: {mcVersion}", ControlAppearance.Danger, null, snackbarService.DefaultTimeOut); IsLoading = false; return; }
                 installer = VanillaInstaller.Create(mcFolder, (VersionManifestEntry)entry);

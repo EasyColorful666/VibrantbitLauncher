@@ -1,0 +1,207 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:helpers="clr-namespace:VibrantbitLauncher.Helpers"
+    xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+
+    <helpers:SubtractConverter x:Key="PagePaddingSubtract" />
+
+    <!--
+        VibrantbitLauncher 全局视觉规范
+
+        颜色一律使用 WPF-UI 的语义化画刷键（TextFillColor*, CardBackground* 等），
+        以便 Light / Dark 主题自动适配，不要再硬编码 #RRGGBB。
+        间距走 4 的倍数，页面内容统一用 PagePadding。
+    -->
+
+    <!--  ==================== 语义色  ====================  -->
+
+    <!--  语义色：主题词典未提供稳定键名时集中在这里维护，页面里不要再写 #RRGGBB  -->
+    <SolidColorBrush x:Key="AppSuccessBrush" Color="#FF10893E" />
+    <SolidColorBrush x:Key="AppCriticalBrush" Color="#FFD13438" />
+    <SolidColorBrush x:Key="AppCautionBrush" Color="#FFCC8800" />
+    <!--  半透明底色，Light / Dark 下都不刺眼  -->
+    <SolidColorBrush x:Key="AppCriticalSurfaceBrush" Color="#FFD13438" Opacity="0.12" />
+    <SolidColorBrush x:Key="AppCautionSurfaceBrush" Color="#FFCC8800" Opacity="0.14" />
+    <!--  主窗口背景：配合 Mica 的浅色叠层  -->
+    <SolidColorBrush x:Key="AppWindowBackgroundBrush" Color="#26FFFFFF" />
+    <!--  图片遮罩上的文字：固定白色，不随明暗主题变化  -->
+    <SolidColorBrush x:Key="AppOnImageTextBrush" Color="#FFFFFFFF" />
+
+    <!--  ==================== 字体  ====================  -->
+
+    <!--  正文字体栈：西文 Segoe UI Variable Text，中文回退 YaHei UI  -->
+    <FontFamily x:Key="AppFont">Segoe UI Variable Text, Microsoft YaHei UI, Segoe UI</FontFamily>
+
+    <!--  展示字体：项目内打包的 HarmonyOS Sans（当前仅 Black 字重，用于标题/强调）  -->
+    <FontFamily x:Key="AppDisplayFont">/VibrantbitLauncher;component/Assets/#HarmonyOS Sans Black</FontFamily>
+
+    <!--  ==================== 字号阶梯  ====================  -->
+
+    <sys:Double x:Key="FontSizeDisplay">34</sys:Double>
+    <sys:Double x:Key="FontSizeTitle">22</sys:Double>
+    <sys:Double x:Key="FontSizeSubtitle">17</sys:Double>
+    <sys:Double x:Key="FontSizeBodyLarge">15</sys:Double>
+    <sys:Double x:Key="FontSizeBody">14</sys:Double>
+    <sys:Double x:Key="FontSizeCaption">12</sys:Double>
+
+    <!--  ==================== 间距（4 的倍数）  ====================  -->
+
+    <sys:Double x:Key="SpaceXS">4</sys:Double>
+    <sys:Double x:Key="SpaceS">8</sys:Double>
+    <sys:Double x:Key="SpaceM">12</sys:Double>
+    <sys:Double x:Key="SpaceL">16</sys:Double>
+    <sys:Double x:Key="SpaceXL">24</sys:Double>
+    <sys:Double x:Key="SpaceXXL">32</sys:Double>
+
+    <!--  页面内容内边距：由页面自己负责（开机向导是独立窗口，没有 NavigationView 提供留白）  -->
+    <Thickness x:Key="PagePadding">32,28,32,32</Thickness>
+    <!--  页面标题块与正文之间的间距  -->
+    <Thickness x:Key="PageHeaderMargin">0,0,0,24</Thickness>
+    <!--  卡片墙的单元间距  -->
+    <Thickness x:Key="CardGap">0,0,16,16</Thickness>
+
+    <!--  ==================== 圆角  ====================  -->
+
+    <CornerRadius x:Key="RadiusS">4</CornerRadius>
+    <CornerRadius x:Key="RadiusM">8</CornerRadius>
+    <CornerRadius x:Key="RadiusL">12</CornerRadius>
+    <CornerRadius x:Key="CardRadius">8</CornerRadius>
+
+    <!--  ==================== 文本样式  ====================  -->
+
+    <!--  页面主标题：每页唯一  -->
+    <Style x:Key="DisplayText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AppDisplayFont}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeDisplay}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+    </Style>
+
+    <!--  页面内标题：比 DisplayText 低一级，用于带操作按钮的标题行  -->
+    <Style x:Key="TitleText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AppDisplayFont}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeTitle}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+    </Style>
+
+    <!--  区块标题：设置分组、列表分组等  -->
+    <Style x:Key="SectionTitleText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AppFont}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeSubtitle}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+    </Style>
+
+    <!--  次级标题：卡片标题、列表主行  -->
+    <Style x:Key="SubtitleText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AppFont}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeSubtitle}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+    </Style>
+
+    <!--  正文  -->
+    <Style x:Key="BodyText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AppFont}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+    </Style>
+
+    <!--  说明文字：比正文低一级的灰  -->
+    <Style x:Key="SecondaryText" TargetType="TextBlock" BasedOn="{StaticResource BodyText}">
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+    </Style>
+
+    <!--  辅助说明、元信息  -->
+    <Style x:Key="CaptionText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AppFont}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+    </Style>
+
+    <!--  ==================== 容器 / 卡片  ====================  -->
+
+    <!--
+        页面根容器。
+        WPF-UI 的 NavigationView 把页面放在 ScrollViewer 里，页面高度本身不受限 ——
+        长内容（新闻列表）会把页面撑高，页面内部的 ScrollViewer 反而不滚动。
+        这里把根容器高度钉在外层可视高度上（再减去 PagePadding 的垂直和 28+32=60）。
+    -->
+    <Style x:Key="PageRoot" TargetType="Grid">
+        <Setter Property="Height" Value="{Binding ViewportHeight, RelativeSource={RelativeSource AncestorType=ScrollViewer}, Converter={StaticResource PagePaddingSubtract}, ConverterParameter=60}" />
+    </Style>
+
+    <!--
+        统一的可视表面：卡片、设置分组等。BasedOn 隐式样式，避免覆盖掉 WPF-UI 的 ControlTemplate。
+        注意：必须给 Background 一个非 null 的画刷 —— WPF 中 Background=null 的元素不参与
+        命中测试，卡片的鼠标事件（悬停高亮、点击打开详情）会全部失效。
+    -->
+    <Style
+        x:Key="SurfaceCard"
+        BasedOn="{StaticResource {x:Type ui:Card}}"
+        TargetType="ui:Card">
+        <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+
+    <!--
+        图片卡片：悬停时弹性放大（BackEase 会轻微过冲，也就是"果冻"感）+ 边框高亮。
+        用 RenderTransform 动画而不是直接 Setter，才有过渡而不是瞬间跳变。
+    -->
+    <Style
+        x:Key="HoverCard"
+        BasedOn="{StaticResource SurfaceCard}"
+        TargetType="ui:Card">
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1" ScaleY="1" />
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Panel.ZIndex" Value="10" />
+                <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorBrush}" />
+                <Trigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation
+                                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                To="1.06"
+                                Duration="0:0:0.28">
+                                <DoubleAnimation.EasingFunction>
+                                    <BackEase Amplitude="0.7" EasingMode="EaseOut" />
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                            <DoubleAnimation
+                                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                To="1.06"
+                                Duration="0:0:0.28">
+                                <DoubleAnimation.EasingFunction>
+                                    <BackEase Amplitude="0.7" EasingMode="EaseOut" />
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation
+                                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                To="1"
+                                Duration="0:0:0.18" />
+                            <DoubleAnimation
+                                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                To="1"
+                                Duration="0:0:0.18" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.ExitActions>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+</ResourceDictionary>

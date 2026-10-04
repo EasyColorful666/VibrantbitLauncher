@@ -9,10 +9,12 @@
     Title="崩溃分析"
     Width="640"
     Height="480"
-    WindowStartupLocation="CenterOwner"
+    FontFamily="{StaticResource AppFont}"
+    FontSize="{StaticResource FontSizeBody}"
     ResizeMode="NoResize"
+    WindowStartupLocation="CenterOwner"
     mc:Ignorable="d">
-    <Grid Margin="20">
+    <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -22,97 +24,113 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- 标题 -->
+        <!--  标题  -->
         <StackPanel Grid.Row="0" Orientation="Horizontal">
-            <ui:SymbolIcon Symbol="ErrorCircle24" Foreground="#FFD13438" Margin="0,0,8,0" />
-            <TextBlock FontSize="18" FontWeight="Bold" Text="Minecraft 崩溃分析" />
+            <ui:SymbolIcon
+                Margin="0,0,8,0"
+                Foreground="{DynamicResource AppCriticalBrush}"
+                Symbol="ErrorCircle24" />
+            <TextBlock Style="{StaticResource TitleText}" Text="Minecraft 崩溃分析" />
         </StackPanel>
 
-        <!-- 说明 -->
+        <!--  说明  -->
         <TextBlock
             Grid.Row="1"
             Margin="0,8,0,0"
-            FontSize="12"
-            Foreground="Gray"
-            TextWrapping="Wrap"
-            Text="游戏进程异常退出，以下是自动分析的崩溃原因和可疑模组：" />
+            Style="{StaticResource CaptionText}"
+            Text="游戏进程异常退出，以下是自动分析的崩溃原因和可疑模组："
+            TextWrapping="Wrap" />
 
-        <!-- 崩溃原因 -->
+        <!--  崩溃原因  -->
         <Border
             Grid.Row="2"
             Margin="0,12,0,0"
             Padding="12,10"
-            Background="#FFFDF2F2"
-            BorderBrush="#FFD13438"
+            Background="{DynamicResource AppCriticalSurfaceBrush}"
+            BorderBrush="{DynamicResource AppCriticalBrush}"
             BorderThickness="1"
-            CornerRadius="6">
+            CornerRadius="{StaticResource RadiusM}">
             <DockPanel>
-                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
-                    <ui:SymbolIcon Symbol="Warning24" Foreground="#FFD13438" Margin="0,0,6,0" />
-                    <TextBlock FontWeight="SemiBold" Foreground="#FFD13438" Text="崩溃原因" />
+                <StackPanel
+                    DockPanel.Dock="Top"
+                    Margin="0,0,0,8"
+                    Orientation="Horizontal">
+                    <ui:SymbolIcon
+                        Margin="0,0,6,0"
+                        Foreground="{DynamicResource AppCriticalBrush}"
+                        Symbol="Warning24" />
+                    <TextBlock
+                        FontWeight="SemiBold"
+                        Foreground="{DynamicResource AppCriticalBrush}"
+                        Text="崩溃原因" />
                 </StackPanel>
                 <ListBox
                     x:Name="CrashReasonsList"
+                    Padding="0"
                     Background="Transparent"
                     BorderThickness="0"
-                    Foreground="#FF333333"
-                    FontSize="13"
-                    Padding="0" />
+                    FontSize="{StaticResource FontSizeBody}"
+                    Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
             </DockPanel>
         </Border>
 
-        <!-- 可疑模组 -->
+        <!--  可疑模组  -->
         <Border
             Grid.Row="3"
             Margin="0,12,0,0"
             Padding="12,10"
-            Background="#FFFFF8E6"
-            BorderBrush="#FFFFA500"
+            Background="{DynamicResource AppCautionSurfaceBrush}"
+            BorderBrush="{DynamicResource AppCautionBrush}"
             BorderThickness="1"
-            CornerRadius="6">
+            CornerRadius="{StaticResource RadiusM}">
             <DockPanel>
-                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
-                    <ui:SymbolIcon Symbol="Apps24" Foreground="#FFFFA500" Margin="0,0,6,0" />
-                    <TextBlock FontWeight="SemiBold" Foreground="#FFCC8800" Text="可疑模组" />
+                <StackPanel
+                    DockPanel.Dock="Top"
+                    Margin="0,0,0,8"
+                    Orientation="Horizontal">
+                    <ui:SymbolIcon
+                        Margin="0,0,6,0"
+                        Foreground="{DynamicResource AppCautionBrush}"
+                        Symbol="Apps24" />
+                    <TextBlock
+                        FontWeight="SemiBold"
+                        Foreground="{DynamicResource AppCautionBrush}"
+                        Text="可疑模组" />
                 </StackPanel>
                 <ListBox
                     x:Name="SuspiciousModsList"
+                    Padding="0"
                     Background="Transparent"
                     BorderThickness="0"
-                    Foreground="#FF333333"
-                    FontSize="13"
-                    Padding="0" />
+                    FontSize="{StaticResource FontSizeBody}"
+                    Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
             </DockPanel>
         </Border>
 
-        <!-- 原始日志提示 -->
+        <!--  原始日志提示  -->
         <TextBlock
             Grid.Row="4"
             Margin="0,12,0,0"
-            FontSize="11"
-            Foreground="Gray"
-            TextWrapping="Wrap"
-            Text="详细日志请查看 .minecraft/crash-reports 目录下的崩溃报告文件。" />
+            Style="{StaticResource CaptionText}"
+            Text="详细日志请查看 .minecraft/crash-reports 目录下的崩溃报告文件。"
+            TextWrapping="Wrap" />
 
-        <!-- 按钮 -->
+        <!--  按钮  -->
         <StackPanel
             Grid.Row="5"
-            Margin="0,12,0,0"
-            Orientation="Horizontal"
-            HorizontalAlignment="Right">
-            <Button
+            Margin="0,16,0,0"
+            HorizontalAlignment="Right"
+            Orientation="Horizontal">
+            <ui:Button
                 x:Name="OpenCrashFolderButton"
-                Width="140"
-                Height="32"
                 Margin="0,0,10,0"
+                Padding="20,8"
                 Click="OpenCrashFolderButton_Click"
                 Content="打开崩溃报告目录" />
-            <Button
+            <ui:Button
                 x:Name="CloseButton"
-                Width="90"
-                Height="32"
-                Background="#FF0078D4"
-                Foreground="White"
+                Padding="20,8"
+                Appearance="Primary"
                 Click="CloseButton_Click"
                 Content="关闭" />
         </StackPanel>
