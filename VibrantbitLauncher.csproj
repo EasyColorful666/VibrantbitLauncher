@@ -77,6 +77,7 @@
   <ItemGroup>
     <Resource Include="Assets\Blank.jpg" />
     <Resource Include="Assets\gravatar.png" />
+    <Resource Include="Assets\steve.png" />
     <Resource Include="Assets\HarmonyOS_Sans_Black.ttf" />
     <Resource Include="gravatar.png" />
     <Resource Include="icon.ico">

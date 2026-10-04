@@ -117,7 +117,7 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <!--  圆形头像：用 EllipseGeometry 裁剪，避免圆角边框裁不到图片  -->
+                            <!--  圆形头像：用 EllipseGeometry 裁剪  -->
                             <Image
                                 Grid.Row="0"
                                 Width="104"

@@ -33,6 +33,9 @@ namespace VibrantbitLauncher.ViewModels.Pages
         ObservableCollection<string> userNames = new();
         ObservableCollection<Account> accounts = new();
         Account selectedAccount;
+        string selectedSkinPath = string.Empty;
+        string selectedAccountName = "未选择账户";
+        string selectedAccountType = string.Empty;
         YggdrasilAccountProfile yggdrasilAccountProfile;
         string offlineAccountName;
 
@@ -46,6 +49,32 @@ namespace VibrantbitLauncher.ViewModels.Pages
             set => SetProperty(ref users, value);
         }
         public bool IsLoaded { get; set; }
+
+        public string SelectedSkinPath
+        {
+            get => selectedSkinPath;
+            set => SetProperty(ref selectedSkinPath, value);
+        }
+
+        public string SelectedAccountName
+        {
+            get => selectedAccountName;
+            set => SetProperty(ref selectedAccountName, value);
+        }
+
+        public string SelectedAccountType
+        {
+            get => selectedAccountType;
+            set => SetProperty(ref selectedAccountType, value);
+        }
+
+        private void UpdateSelectedDisplay(Account account)
+        {
+            var user = users.FirstOrDefault(u => u.Account == account);
+            SelectedSkinPath = user?.FullSkinPath ?? string.Empty;
+            SelectedAccountName = account?.Name ?? "未选择账户";
+            SelectedAccountType = user?.AccountType ?? string.Empty;
+        }
         public AccountPageViewModel()
         {
             IsLoaded = false;
@@ -82,26 +111,58 @@ namespace VibrantbitLauncher.ViewModels.Pages
         /// </summary>
         private void RestoreSavedAccounts()
         {
-            // 离线账户：直接使用保存的 OfflineAccount 对象
+            // 离线账户：使用史蒂夫皮肤
             foreach (var saved in SettingsService.Current.OfflineAccounts)
             {
                 if (string.IsNullOrEmpty(saved.Name)) continue;
-                AddAccountToList(saved, "Offline", ResolveAvatarPath(null));
-                AutoSelectIfSaved(saved, saved.Uuid.ToString());
+                var uuid = saved.Uuid.ToString();
+                if (string.IsNullOrEmpty(ResolveFullSkinPath(uuid)))
+                    EnsureSteveSkin(saved);
+                AddAccountToList(saved, "Offline", ResolveAvatarPath(uuid), ResolveFullSkinPath(uuid));
+                AutoSelectIfSaved(saved, uuid);
             }
 
-            // 微软账户：直接使用保存的 MicrosoftAccount 对象
+            // 微软账户
             foreach (var saved in SettingsService.Current.MicrosoftAccounts)
             {
-                AddAccountToList(saved, "Microsoft", ResolveAvatarPath(saved.Uuid.ToString()));
-                AutoSelectIfSaved(saved, saved.Uuid.ToString());
+                var uuid = saved.Uuid.ToString();
+                AddAccountToList(saved, "Microsoft", ResolveAvatarPath(uuid), ResolveFullSkinPath(uuid));
+                AutoSelectIfSaved(saved, uuid);
             }
 
-            // Yggdrasil 账户：直接使用保存的 YggdrasilAccount 对象
+            // Yggdrasil 账户
             foreach (var saved in SettingsService.Current.YggdrasilAccounts)
             {
-                AddAccountToList(saved, "Yggdrasil", ResolveAvatarPath(saved.Uuid.ToString()));
-                AutoSelectIfSaved(saved, saved.Uuid.ToString());
+                var uuid = saved.Uuid.ToString();
+                AddAccountToList(saved, "Yggdrasil", ResolveAvatarPath(uuid), ResolveFullSkinPath(uuid));
+                AutoSelectIfSaved(saved, uuid);
+            }
+        }
+
+        /// <summary>
+        /// 为离线账户生成史蒂夫皮肤文件（完整皮肤 + 头部头像）。
+        /// </summary>
+        private static void EnsureSteveSkin(OfflineAccount account)
+        {
+            try
+            {
+                var resDir = Path.Combine(AppContext.BaseDirectory, "res");
+                if (!Directory.Exists(resDir)) Directory.CreateDirectory(resDir);
+                var fullSkinPath = Path.Combine(resDir, $"{account.Uuid}_full.png");
+                var skinPath = Path.Combine(resDir, $"{account.Uuid}.png");
+
+                var resourceStream = Application.GetResourceStream(
+                    new Uri("/Assets/steve.png", UriKind.Relative));
+                using (var fs = new FileStream(fullSkinPath, FileMode.Create))
+                    resourceStream.Stream.CopyTo(fs);
+
+                var skinBytes = File.ReadAllBytes(fullSkinPath);
+                var skin = new MinecraftLaunch.Skin.SkinResolver(skinBytes);
+                skin.CropSkinHeadBitmap().SaveAsPng(skinPath);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[EnsureSteveSkin] {ex.Message}");
             }
         }
 
@@ -123,7 +184,17 @@ namespace VibrantbitLauncher.ViewModels.Pages
             return defaultAvatar;
         }
 
-        private void AddAccountToList(Account account, string type, string imagePath)
+        /// <summary>
+        /// 解析完整皮肤路径（用于3D预览），不存在则返回空字符串。
+        /// </summary>
+        private static string ResolveFullSkinPath(string? uuid)
+        {
+            if (string.IsNullOrEmpty(uuid)) return string.Empty;
+            var fullPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "res", $"{uuid}_full.png"));
+            return File.Exists(fullPath) ? fullPath : string.Empty;
+        }
+
+        private void AddAccountToList(Account account, string type, string imagePath, string fullSkinPath = "")
         {
             userNames.Add(account.Name);
             accounts.Add(account);
@@ -134,7 +205,8 @@ namespace VibrantbitLauncher.ViewModels.Pages
                 AccountType = type,
                 SelectedCommand = new RelayCommand<Account>(Selected),
                 DeleteCommand = new RelayCommand<Account>(DeleteAccount),
-                ImagePath = imagePath
+                ImagePath = imagePath,
+                FullSkinPath = fullSkinPath
             });
         }
 
@@ -145,6 +217,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
                 selectedAccount = account;
                 MainWindowViewModel.MainModel.Account = account;
                 MainWindowViewModel.MainModel.IsMicrosoftAccount = account is MicrosoftAccount;
+                UpdateSelectedDisplay(account);
             }
         }
 
@@ -296,11 +369,45 @@ namespace VibrantbitLauncher.ViewModels.Pages
             if (!string.IsNullOrEmpty(offlineAccountName))
             {
                 var userprofile = authenticator.Authenticate(offlineAccountName);
+
+                // 使用史蒂夫皮肤
+                var resDir = Path.Combine(AppContext.BaseDirectory, "res");
+                if (!Directory.Exists(resDir)) Directory.CreateDirectory(resDir);
+                var skinPath = Path.Combine(resDir, $"{userprofile.Uuid}.png");
+                var fullSkinPath = Path.Combine(resDir, $"{userprofile.Uuid}_full.png");
+                try
+                {
+                    // 从嵌入资源提取史蒂夫皮肤
+                    var resourceStream = Application.GetResourceStream(
+                        new Uri("/Assets/steve.png", UriKind.Relative));
+                    using (var fs = new FileStream(fullSkinPath, FileMode.Create))
+                    {
+                        resourceStream.Stream.CopyTo(fs);
+                    }
+                    // 生成头部头像
+                    var skinBytes = File.ReadAllBytes(fullSkinPath);
+                    var skin = new MinecraftLaunch.Skin.SkinResolver(skinBytes);
+                    skin.CropSkinHeadBitmap().SaveAsPng(skinPath);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[Offline] Steve skin setup failed: {ex.Message}");
+                }
+
                 App.Current.Dispatcher.Invoke(() =>
                 {
                     userNames.Add(userprofile.Name);
                     accounts.Add(userprofile);
-                    users.Add(new User { Name = offlineAccountName, Account = userprofile, AccountType = "Offline", SelectedCommand = new RelayCommand<Account>(Selected), DeleteCommand = new RelayCommand<Account>(DeleteAccount) });
+                    users.Add(new User
+                    {
+                        Name = offlineAccountName,
+                        Account = userprofile,
+                        AccountType = "Offline",
+                        SelectedCommand = new RelayCommand<Account>(Selected),
+                        DeleteCommand = new RelayCommand<Account>(DeleteAccount),
+                        ImagePath = File.Exists(skinPath) ? skinPath : "/Assets/gravatar.png",
+                        FullSkinPath = File.Exists(fullSkinPath) ? fullSkinPath : string.Empty
+                    });
                     SettingsService.SaveOfflineAccount(userprofile);
                 });
                 snackbarService.Show("提示", $"离线用户{offlineAccountName}已创建", ControlAppearance.Info, null, snackbarService.DefaultTimeOut);
@@ -313,6 +420,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
             MainWindowViewModel.MainModel.Account = account;
             MainWindowViewModel.MainModel.IsMicrosoftAccount = account is MicrosoftAccount;
             SettingsService.SetSelectedAccount(GetAccountUuid(account));
+            UpdateSelectedDisplay(account);
         }
 
         /// <summary>
@@ -349,6 +457,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
         public RelayCommand<Account> SelectedCommand { get; set; }
         public RelayCommand<Account> DeleteCommand { get; set; }
         public string ImagePath { get; set; } = @"/Assets/gravatar.png";
+        public string FullSkinPath { get; set; } = string.Empty;
     }
 
     public class YggdrasilAccountProfile
