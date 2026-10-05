@@ -6,10 +6,13 @@ using MinecraftLaunch.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
+using Serilog.Events;
 using VibrantbitLauncher.Models;
 using VibrantbitLauncher.Services;
 using VibrantbitLauncher.ViewModels.Windows;
@@ -32,21 +35,136 @@ namespace VibrantbitLauncher.ViewModels.Pages
         public ICommand ChangeThemeCommand { get; private set; }
         public ICommand RefreshJavaCommand { get; private set; }
 
+        /// <summary>打开当前的 .minecraft 目录（概览面板的快捷入口）。</summary>
+        public RelayCommand OpenGameFolderCommand { get; }
+
         public SettingsPageViewModel()
         {
             ChangeThemeCommand = new RelayCommand<string>(OnChangeTheme);
             RefreshJavaCommand = new RelayCommand(async () => await LoadJavaAsync());
+            OpenGameFolderCommand = new RelayCommand(OpenGameFolder);
             PickWallpaperCommand = new RelayCommand<WallpaperOption>(PickWallpaper);
             ClearBackgroundCommand = new RelayCommand(ClearBackground);
             ResetAppearanceCommand = new RelayCommand(ResetAppearance);
             SelectAccentCommand = new RelayCommand<AccentPreset>(SelectAccent);
             SelectGradientEndCommand = new RelayCommand<AccentPreset>(SelectGradientEnd);
+
+            RefreshLogsCommand = new RelayCommand(RefreshLogs);
+            ClearLogsCommand = new RelayCommand(ClearLogs);
+            OpenLogFolderCommand = new RelayCommand(LogService.OpenLogDirectory);
+
+            // 订阅内存 sink：日志产生时实时出现在「最近日志」里。
+            // 事件可能来自任意线程（下载、启动都是后台线程），必须切回 UI 线程再动集合。
+            LogService.EntryWritten += OnLogEntryWritten;
+        }
+
+        private void OnLogEntryWritten(LogEntry entry)
+        {
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher == null)
+                return;
+
+            if (dispatcher.CheckAccess())
+                AppendLog(entry);
+            else
+                dispatcher.BeginInvoke(new Action(() => AppendLog(entry)));
+        }
+
+        private void AppendLog(LogEntry entry)
+        {
+            if (!PassesFilter(entry))
+                return;
+
+            _recentLogs.Add(entry);
+
+            // 与内存 sink 的容量保持一致，避免界面侧的集合无限增长
+            while (_recentLogs.Count > MaxVisibleLogs)
+                _recentLogs.RemoveAt(0);
+
+            HasLogs = _recentLogs.Count > 0;
+            UpdateLogSummary();
+        }
+
+        private bool PassesFilter(LogEntry entry) =>
+            entry.Level >= _selectedLogFilterMinLevel;
+
+        /// <summary>从内存缓冲重新灌一次列表（切过滤条件、进页面时用）。</summary>
+        private void RefreshLogs()
+        {
+            _recentLogs.Clear();
+
+            foreach (var entry in LogService.Snapshot())
+            {
+                if (!PassesFilter(entry))
+                    continue;
+
+                _recentLogs.Add(entry);
+            }
+
+            while (_recentLogs.Count > MaxVisibleLogs)
+                _recentLogs.RemoveAt(0);
+
+            HasLogs = _recentLogs.Count > 0;
+            UpdateLogSummary(force: true);
+        }
+
+        private void ClearLogs()
+        {
+            var deleted = LogService.ClearAll();
+            RefreshLogs();
+            UpdateLogSummary(force: true);
+            LogActionMessage = deleted > 0
+                ? $"已删除 {deleted} 个日志文件，并从此刻重新记录"
+                : "没有找到日志文件，已从此刻重新记录";
+        }
+
+        /// <summary>导出最新一个日志文件（由设置页的「导出日志」按钮调用）。</summary>
+        public void ExportLog(string destination)
+        {
+            LogActionMessage = LogService.ExportLatest(destination)
+                ? $"已导出到 {destination}"
+                : "导出失败：没有可导出的日志文件，或目标与源文件相同";
+        }
+
+        /// <summary>上一次真正重算日志摘要的时间（用于限频）。</summary>
+        private DateTime _lastLogSummaryUtc = DateTime.MinValue;
+
+        /// <summary>
+        /// 刷新日志摘要。
+        ///
+        /// 摘要要枚举日志目录并逐个取文件大小，而 Verbose / Debug 级别下每秒可能有几十条日志；
+        /// 来一条算一次会把 UI 线程拖住（"日志一多界面就发涩"就是这么来的）。
+        /// 所以默认限频，只有清空 / 切换页面这类用户显式操作才传 force 立即刷新。
+        /// </summary>
+        private void UpdateLogSummary(bool force = false)
+        {
+            var now = DateTime.UtcNow;
+            if (!force && now - _lastLogSummaryUtc < TimeSpan.FromSeconds(2))
+                return;
+
+            _lastLogSummaryUtc = now;
+
+            var files = LogService.GetLogFiles();
+            var size = FormatSize(LogService.GetTotalSize());
+            LogSummary = $"{files.Count} 个文件 · 共 {size} · 界面显示 {_recentLogs.Count} 条（最多 {MaxVisibleLogs} 条）";
+        }
+
+        private static string FormatSize(long bytes)
+        {
+            if (bytes < 1024)
+                return $"{bytes} B";
+            if (bytes < 1024 * 1024)
+                return $"{bytes / 1024.0:F1} KB";
+            return $"{bytes / (1024.0 * 1024.0):F1} MB";
         }
 
         Task INavigationAware.OnNavigatedToAsync()
         {
             if (!_isInitialized)
                 InitializeViewModel();
+
+            // 每次进入设置页都重新灌一次，保证看到的是最新内容
+            RefreshLogs();
             return Task.CompletedTask;
         }
 
@@ -80,6 +198,30 @@ namespace VibrantbitLauncher.ViewModels.Pages
                 BackgroundImagePath = SettingsService.Current.BackgroundImagePath ?? string.Empty;
                 BackgroundImageOpacity = SettingsService.Current.BackgroundImageOpacity;
 
+                // 日志设置：回填控件状态时不触发保存 / 重建
+                _suppressLogApply = true;
+                try
+                {
+                    _selectedLogLevel = LogService.AvailableLevels.FirstOrDefault(l =>
+                        string.Equals(l.Key, SettingsService.Current.LogLevel, StringComparison.OrdinalIgnoreCase))
+                        ?? LogService.AvailableLevels[2];
+                    OnPropertyChanged(nameof(SelectedLogLevel));
+
+                    _selectedLogRetention = LogRetentionOptions.Contains(SettingsService.Current.LogRetentionDays)
+                        ? SettingsService.Current.LogRetentionDays
+                        : 7;
+                    OnPropertyChanged(nameof(SelectedLogRetention));
+
+                    _logToDebugOutput = SettingsService.Current.LogToDebugOutput;
+                    OnPropertyChanged(nameof(LogToDebugOutput));
+                }
+                finally
+                {
+                    _suppressLogApply = false;
+                }
+
+                RefreshLogs();
+
                 _ = LoadJavaAsync();
             }
             finally
@@ -111,6 +253,23 @@ namespace VibrantbitLauncher.ViewModels.Pages
             catch
             {
                 // 枚举失败时静默
+            }
+        }
+
+        /// <summary>打开当前的 .minecraft 目录；目录不存在就先建出来，避免资源管理器报错定位不到。</summary>
+        private void OpenGameFolder()
+        {
+            try
+            {
+                var folder = Path.GetFullPath(MinecraftFolder);
+                if (!Directory.Exists(folder))
+                    Directory.CreateDirectory(folder);
+
+                Process.Start(new ProcessStartInfo("explorer.exe", $"\"{folder}\"") { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                Serilog.Log.Warning(ex, "打开游戏目录失败：{Folder}", MinecraftFolder);
             }
         }
 
@@ -361,11 +520,144 @@ namespace VibrantbitLauncher.ViewModels.Pages
             SettingsService.Save();
         }
 
+        // ===== 日志 =====
+
+        /// <summary>界面侧最多保留的日志行数，与 LogService 的内存缓冲容量对齐。</summary>
+        private const int MaxVisibleLogs = 1000;
+
+        private readonly ObservableCollection<LogEntry> _recentLogs = new();
+        private LogLevelOption _selectedLogLevel = LogService.AvailableLevels[2];
+        private LogLevelOption _selectedLogFilter = new("Verbose", "全部等级");
+        private LogEventLevel _selectedLogFilterMinLevel = LogEventLevel.Verbose;
+        private int _selectedLogRetention = 7;
+        private bool _logToDebugOutput = true;
+        private bool _suppressLogApply;
+        private bool _hasLogs;
+        private string _logSummary = string.Empty;
+        private string _logActionMessage = string.Empty;
+
+        /// <summary>可选的最低记录等级。</summary>
+        public IReadOnlyList<LogLevelOption> LogLevels => LogService.AvailableLevels;
+
+        /// <summary>查看器的等级过滤选项。</summary>
+        public IReadOnlyList<LogLevelOption> LogFilters { get; } = new[]
+        {
+            new LogLevelOption("Verbose", "全部等级"),
+            new LogLevelOption("Information", "信息及以上"),
+            new LogLevelOption("Warning", "警告及以上"),
+            new LogLevelOption("Error", "错误及以上"),
+        };
+
+        /// <summary>可选的日志保留天数。</summary>
+        public IReadOnlyList<int> LogRetentionOptions { get; } = new[] { 3, 7, 14, 30 };
+
+        /// <summary>日志目录。</summary>
+        public string LogDirectory => LogService.LogDirectory;
+
+        /// <summary>界面显示的日志。</summary>
+        public ObservableCollection<LogEntry> RecentLogs => _recentLogs;
+
+        public bool HasLogs
+        {
+            get => _hasLogs;
+            private set => SetProperty(ref _hasLogs, value);
+        }
+
+        /// <summary>日志文件数量 / 占用空间 / 已显示条数。</summary>
+        public string LogSummary
+        {
+            get => _logSummary;
+            private set => SetProperty(ref _logSummary, value);
+        }
+
+        /// <summary>上一次操作（清空 / 导出）的结果提示。</summary>
+        public string LogActionMessage
+        {
+            get => _logActionMessage;
+            private set => SetProperty(ref _logActionMessage, value);
+        }
+
+        /// <summary>最低记录等级。改动即时生效，无需重启。</summary>
+        public LogLevelOption SelectedLogLevel
+        {
+            get => _selectedLogLevel;
+            set
+            {
+                // 先判空再 SetProperty：ComboBox 在 ItemsSource 变化时会推 null 过来
+                if (value == null || !SetProperty(ref _selectedLogLevel, value) || _suppressLogApply)
+                    return;
+
+                SettingsService.Current.LogLevel = value.Key;
+                LogService.ApplyLevel(value.Key);
+                SettingsService.Save();
+
+                // 立刻写一条，让用户在当前视图里就能看到等级生效（等级高于 Information 时本条不会出现）
+                Serilog.Log.Information("日志等级已切换为 {Level}", value.Key);
+            }
+        }
+
+        /// <summary>查看器的等级过滤。</summary>
+        public LogLevelOption SelectedLogFilter
+        {
+            get => _selectedLogFilter;
+            set
+            {
+                if (value == null || !SetProperty(ref _selectedLogFilter, value))
+                    return;
+
+                _selectedLogFilterMinLevel = ParseFilterLevel(value.Key);
+                RefreshLogs();
+            }
+        }
+
+        /// <summary>日志保留天数。改动后重建 File sink 生效。</summary>
+        public int SelectedLogRetention
+        {
+            get => _selectedLogRetention;
+            set
+            {
+                if (!SetProperty(ref _selectedLogRetention, value) || _suppressLogApply)
+                    return;
+
+                SettingsService.Current.LogRetentionDays = value;
+                LogService.Reinitialize();
+                SettingsService.Save();
+                UpdateLogSummary();
+                Serilog.Log.Information("日志保留天数已改为 {Days} 天", value);
+            }
+        }
+
+        /// <summary>是否同时输出到调试器。</summary>
+        public bool LogToDebugOutput
+        {
+            get => _logToDebugOutput;
+            set
+            {
+                if (!SetProperty(ref _logToDebugOutput, value) || _suppressLogApply)
+                    return;
+
+                SettingsService.Current.LogToDebugOutput = value;
+                LogService.Reinitialize();
+                SettingsService.Save();
+                Serilog.Log.Information("日志调试器输出：{Enabled}", value ? "开" : "关");
+            }
+        }
+
+        public RelayCommand RefreshLogsCommand { get; }
+        public RelayCommand ClearLogsCommand { get; }
+        public RelayCommand OpenLogFolderCommand { get; }
+
+        private static LogEventLevel ParseFilterLevel(string key) =>
+            Enum.TryParse<LogEventLevel>(key, ignoreCase: true, out var level)
+                ? level
+                : LogEventLevel.Verbose;
+
         // ===== 方法 =====
 
         private string GetAssemblyVersion()
         {
-            return Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? string.Empty;
+            // 与启动日志横幅共用同一份展示逻辑（形如 "1.0.4" 或 "1.0.4.1"，不含 SourceLink 的 "+<commit>"）
+            return App.GetDisplayVersion();
         }
 
         private void OnChangeTheme(string parameter)

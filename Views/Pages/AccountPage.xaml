@@ -111,6 +111,7 @@
                     <ui:Card
                         Width="208"
                         Height="278"
+                        VerticalContentAlignment="Stretch"
                         Style="{StaticResource SurfaceCard}">
                         <Grid>
                             <Grid.RowDefinitions>

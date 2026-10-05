@@ -202,7 +202,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[InstallPage] LoadVersionsAsync error: {ex}");
+                Serilog.Log.Error(ex, "加载版本列表失败");
             }
             finally
             {
@@ -435,7 +435,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
             catch (Exception ex)
             {
                 var realMsg = installException?.Message ?? ex.Message;
-                System.Diagnostics.Debug.WriteLine($"[InstallPage] Install failed: {realMsg}\n{installException}");
+                Serilog.Log.Error(installException ?? ex, "安装失败：{Message}", realMsg);
                 taskService?.FailTask(task, realMsg);
                 App.Current.Dispatcher.Invoke((Action)(() =>
                 {

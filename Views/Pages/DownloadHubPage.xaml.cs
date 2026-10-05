@@ -5,7 +5,9 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Navigation;
+using VibrantbitLauncher.Helpers;
 using VibrantbitLauncher.Models;
+using VibrantbitLauncher.Services;
 
 namespace VibrantbitLauncher.Views.Pages
 {
@@ -17,8 +19,18 @@ namespace VibrantbitLauncher.Views.Pages
     /// </summary>
     public partial class DownloadHubPage : Page
     {
-        /// <summary>分类序号 → Modrinth 项目类型；0 是原版游戏，不走 Modrinth。</summary>
-        private static readonly string[] ResourceTypes = { "mod", "modpack", "resourcepack", "shader" };
+        /// <summary>
+        /// 分类序号 → Modrinth 项目类型；0 是原版游戏，不走 Modrinth。
+        /// 顺序必须与 XAML 里左侧 ListBox 的 Tag 一一对应（1=模组、2=整合包、3=数据包、4=资源包、5=光影）。
+        /// </summary>
+        private static readonly string[] ResourceTypes =
+        {
+            ModrinthSearchService.TypeMod,
+            ModrinthSearchService.TypeModpack,
+            ModrinthSearchService.TypeDatapack,
+            ModrinthSearchService.TypeResourcePack,
+            ModrinthSearchService.TypeShader
+        };
 
         private readonly Dictionary<int, Frame> _resourceFrames = new();
         private DownloadPage? _downloadPage;
@@ -68,6 +80,7 @@ namespace VibrantbitLauncher.Views.Pages
                 VersionFrame.Content = _downloadPage;
 
             VersionFrame.Visibility = Visibility.Visible;
+            PageTransitionHelper.PlayEnterTransition(VersionFrame);
 
             foreach (var frame in _resourceFrames.Values)
                 frame.Visibility = Visibility.Collapsed;
@@ -98,6 +111,9 @@ namespace VibrantbitLauncher.Views.Pages
 
             foreach (var pair in _resourceFrames)
                 pair.Value.Visibility = pair.Key == index ? Visibility.Visible : Visibility.Collapsed;
+
+            if (_resourceFrames.TryGetValue(index, out var shown))
+                PageTransitionHelper.PlayEnterTransition(shown);
         }
 
         /// <summary>按分类序号选中左侧对应项；内容切换由 SelectionChanged 统一驱动。</summary>

@@ -1,7 +1,8 @@
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using VibrantbitLauncher.Helpers;
 using VibrantbitLauncher.ViewModels.Pages;
 
 namespace VibrantbitLauncher.Views.Pages
@@ -11,6 +12,36 @@ namespace VibrantbitLauncher.Views.Pages
         public SettingsPage()
         {
             InitializeComponent();
+
+            // InitializeComponent 期间 XAML 的 IsSelected="True" 会触发 SelectionChanged，
+            // 那时容器还没建好，这里按当前选中项补一次。
+            ApplyCurrentCategory();
+        }
+
+        private void CategoryList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+            => ApplyCurrentCategory();
+
+        /// <summary>按左侧当前选中项切换右侧面板；只改 Visibility，不重建内容。</summary>
+        private void ApplyCurrentCategory()
+        {
+            if (PanelHost == null)
+                return;
+
+            if (CategoryList.SelectedItem is not ListBoxItem item
+                || item.Tag is not string tag
+                || !int.TryParse(tag, out var index))
+            {
+                return;
+            }
+
+            var panels = new[] { HomePanel, PersonalizationPanel, OtherPanel };
+            if (index < 0 || index >= panels.Length)
+                return;
+
+            for (var i = 0; i < panels.Length; i++)
+                panels[i].Visibility = i == index ? Visibility.Visible : Visibility.Collapsed;
+
+            PageTransitionHelper.PlayEnterTransition(panels[index]);
         }
 
         /// <summary>
@@ -28,6 +59,25 @@ namespace VibrantbitLauncher.Views.Pages
             if (dialog.ShowDialog() == true && DataContext is SettingsPageViewModel vm)
             {
                 vm.SetBackgroundImage(dialog.FileName);
+            }
+        }
+
+        /// <summary>
+        /// 把最新一个日志文件另存到用户选定的位置。
+        /// </summary>
+        private void OnExportLog(object sender, RoutedEventArgs e)
+        {
+            var dialog = new SaveFileDialog
+            {
+                Title = "导出日志",
+                FileName = $"vibrantbit-{DateTime.Now:yyyyMMdd}.log",
+                DefaultExt = ".log",
+                Filter = "日志文件|*.log|文本文件|*.txt|所有文件|*.*"
+            };
+
+            if (dialog.ShowDialog() == true && DataContext is SettingsPageViewModel vm)
+            {
+                vm.ExportLog(dialog.FileName);
             }
         }
 

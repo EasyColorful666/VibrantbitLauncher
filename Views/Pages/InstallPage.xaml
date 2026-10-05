@@ -1,4 +1,4 @@
-<Page
+﻿<Page
     x:Class="VibrantbitLauncher.Views.Pages.InstallPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -14,14 +14,40 @@
     d:DesignWidth="800"
     mc:Ignorable="d">
     <Page.Resources>
-        <!--  四个加载器统一卡片外观，替代原生的朴素 Expander  -->
-        <Style BasedOn="{StaticResource {x:Type Expander}}" TargetType="Expander">
-            <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="12,8" />
+        <!--
+            版本选择列表：贴合卡片内部。
+            用固定高度的卡片 + 列表内部滚动，代替原来的原生 Expander ——
+            Expander 在 2x2 网格里不会拉伸到行高，四个加载器的卡片高度会各随内容，
+            空列表的卡片缩成一条、有内容的撑满，整页看着参差不齐。
+        -->
+        <Style x:Key="VersionPickerList" TargetType="ListBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+            <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel" />
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Margin" Value="0,1" />
+                        <Setter Property="Padding" Value="10,6" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!--  空列表占位文案：由各卡片按自己的版本集合是否为空来显示  -->
+        <Style x:Key="EmptyHintBase" TargetType="TextBlock" BasedOn="{StaticResource CaptionText}">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextAlignment" Value="Center" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Visibility" Value="Collapsed" />
         </Style>
     </Page.Resources>
+
     <i:Interaction.Triggers>
         <i:EventTrigger EventName="Loaded">
             <i:InvokeCommandAction Command="{Binding LoadCommand}" CommandParameter="{Binding ElementName=SnackbarPresenter}" />
@@ -67,7 +93,7 @@
             </StackPanel>
         </Grid>
 
-        <!--  四个加载器：2x2 随窗口自适应  -->
+        <!--  四个加载器：2x2，四张卡片自动等高等宽  -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -79,79 +105,240 @@
             </Grid.RowDefinitions>
 
             <!--  Forge  -->
-            <Expander
+            <ui:Card
                 Grid.Row="0"
                 Grid.Column="0"
                 Margin="0,0,8,8"
-                IsExpanded="True">
-                <Expander.Header>
-                    <StackPanel Orientation="Horizontal">
+                Padding="16,12"
+                VerticalAlignment="Stretch"
+                VerticalContentAlignment="Stretch">
+                <ui:Card.Style>
+                    <Style BasedOn="{StaticResource SurfaceCard}" TargetType="ui:Card">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsChecked, ElementName=checkBox1}" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ui:Card.Style>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal">
                         <CheckBox
                             x:Name="checkBox1"
+                            VerticalAlignment="Center"
                             Checked="checkBox1_Checked"
                             Unchecked="checkBox1_Unchecked" />
-                        <TextBlock Style="{StaticResource SubtitleText}" Text="Forge" />
+                        <TextBlock
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource SubtitleText}"
+                            Text="Forge" />
+                        <TextBlock
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource CaptionText}"
+                            Text="{Binding ForgeVersions.Count, StringFormat='{}{0} 个版本'}" />
                     </StackPanel>
-                </Expander.Header>
-                <ListBox
-                    Padding="0,3,0,0"
-                    ItemsSource="{Binding ForgeVersions}"
-                    SelectedItem="{Binding SelectForgeVersion}" />
-            </Expander>
+                    <Grid Grid.Row="1" Margin="0,8,0,0">
+                        <ListBox
+                            ItemsSource="{Binding ForgeVersions}"
+                            SelectedItem="{Binding SelectForgeVersion}"
+                            Style="{StaticResource VersionPickerList}" />
+                        <TextBlock Text="该版本暂无可用版本">
+                            <TextBlock.Style>
+                                <Style BasedOn="{StaticResource EmptyHintBase}" TargetType="TextBlock">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ForgeVersions.Count}" Value="0">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                </Grid>
+            </ui:Card>
 
             <!--  Fabric  -->
-            <Expander
+            <ui:Card
                 Grid.Row="0"
                 Grid.Column="1"
                 Margin="8,0,0,8"
-                IsExpanded="True">
-                <Expander.Header>
-                    <StackPanel Orientation="Horizontal">
+                Padding="16,12"
+                VerticalAlignment="Stretch"
+                VerticalContentAlignment="Stretch">
+                <ui:Card.Style>
+                    <Style BasedOn="{StaticResource SurfaceCard}" TargetType="ui:Card">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsChecked, ElementName=checkBox2}" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ui:Card.Style>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal">
                         <CheckBox
                             x:Name="checkBox2"
+                            VerticalAlignment="Center"
                             Checked="checkBox2_Checked"
                             Unchecked="checkBox2_Unchecked" />
-                        <TextBlock Style="{StaticResource SubtitleText}" Text="Fabric" />
+                        <TextBlock
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource SubtitleText}"
+                            Text="Fabric" />
+                        <TextBlock
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource CaptionText}"
+                            Text="{Binding FabricVersions.Count, StringFormat='{}{0} 个版本'}" />
                     </StackPanel>
-                </Expander.Header>
-                <ListBox ItemsSource="{Binding FabricVersions}" SelectedItem="{Binding SelectFabricVersion}" />
-            </Expander>
+                    <Grid Grid.Row="1" Margin="0,8,0,0">
+                        <ListBox
+                            ItemsSource="{Binding FabricVersions}"
+                            SelectedItem="{Binding SelectFabricVersion}"
+                            Style="{StaticResource VersionPickerList}" />
+                        <TextBlock Text="该版本暂无可用版本">
+                            <TextBlock.Style>
+                                <Style BasedOn="{StaticResource EmptyHintBase}" TargetType="TextBlock">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding FabricVersions.Count}" Value="0">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                </Grid>
+            </ui:Card>
 
             <!--  NeoForge  -->
-            <Expander
+            <ui:Card
                 Grid.Row="1"
                 Grid.Column="0"
                 Margin="0,8,8,0"
-                IsExpanded="True">
-                <Expander.Header>
-                    <StackPanel Orientation="Horizontal">
+                Padding="16,12"
+                VerticalAlignment="Stretch"
+                VerticalContentAlignment="Stretch">
+                <ui:Card.Style>
+                    <Style BasedOn="{StaticResource SurfaceCard}" TargetType="ui:Card">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsChecked, ElementName=checkBox3}" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ui:Card.Style>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal">
                         <CheckBox
                             x:Name="checkBox3"
+                            VerticalAlignment="Center"
                             Checked="checkBox3_Checked"
                             Unchecked="checkBox3_Unchecked" />
-                        <TextBlock Style="{StaticResource SubtitleText}" Text="NeoForge" />
+                        <TextBlock
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource SubtitleText}"
+                            Text="NeoForge" />
+                        <TextBlock
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource CaptionText}"
+                            Text="{Binding NeoforgeVersions.Count, StringFormat='{}{0} 个版本'}" />
                     </StackPanel>
-                </Expander.Header>
-                <ListBox ItemsSource="{Binding NeoforgeVersions}" SelectedItem="{Binding SelectNeoforgeVersion}" />
-            </Expander>
+                    <Grid Grid.Row="1" Margin="0,8,0,0">
+                        <ListBox
+                            ItemsSource="{Binding NeoforgeVersions}"
+                            SelectedItem="{Binding SelectNeoforgeVersion}"
+                            Style="{StaticResource VersionPickerList}" />
+                        <TextBlock Text="该版本暂无可用版本">
+                            <TextBlock.Style>
+                                <Style BasedOn="{StaticResource EmptyHintBase}" TargetType="TextBlock">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding NeoforgeVersions.Count}" Value="0">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                </Grid>
+            </ui:Card>
 
             <!--  Quilt  -->
-            <Expander
+            <ui:Card
                 Grid.Row="1"
                 Grid.Column="1"
                 Margin="8,8,0,0"
-                IsExpanded="True">
-                <Expander.Header>
-                    <StackPanel Orientation="Horizontal">
+                Padding="16,12"
+                VerticalAlignment="Stretch"
+                VerticalContentAlignment="Stretch">
+                <ui:Card.Style>
+                    <Style BasedOn="{StaticResource SurfaceCard}" TargetType="ui:Card">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsChecked, ElementName=checkBox4}" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ui:Card.Style>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal">
                         <CheckBox
                             x:Name="checkBox4"
+                            VerticalAlignment="Center"
                             Checked="checkBox4_Checked"
                             Unchecked="checkBox4_Unchecked" />
-                        <TextBlock Style="{StaticResource SubtitleText}" Text="Quilt" />
+                        <TextBlock
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource SubtitleText}"
+                            Text="Quilt" />
+                        <TextBlock
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource CaptionText}"
+                            Text="{Binding QuiltVersions.Count, StringFormat='{}{0} 个版本'}" />
                     </StackPanel>
-                </Expander.Header>
-                <ListBox ItemsSource="{Binding QuiltVersions}" SelectedItem="{Binding SelectQuiltVersion}" />
-            </Expander>
+                    <Grid Grid.Row="1" Margin="0,8,0,0">
+                        <ListBox
+                            ItemsSource="{Binding QuiltVersions}"
+                            SelectedItem="{Binding SelectQuiltVersion}"
+                            Style="{StaticResource VersionPickerList}" />
+                        <TextBlock Text="该版本暂无可用版本">
+                            <TextBlock.Style>
+                                <Style BasedOn="{StaticResource EmptyHintBase}" TargetType="TextBlock">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding QuiltVersions.Count}" Value="0">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                </Grid>
+            </ui:Card>
         </Grid>
 
         <!--  安装进度  -->

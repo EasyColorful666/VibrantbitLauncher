@@ -26,6 +26,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -57,13 +58,17 @@
                 ToolTip="刷新" />
         </Grid>
 
-        <!--  标签切换：模组管理 / 存档管理  -->
-        <StackPanel
-            Grid.Row="1"
-            Margin="0,0,0,12"
-            Orientation="Horizontal">
+        <!--  标签切换 + 当前管理的目录（版本隔离目录）  -->
+        <Grid Grid.Row="1" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
             <ui:Button
                 x:Name="ModsTab"
+                Grid.Column="0"
                 Margin="0,0,8,0"
                 Padding="16,6"
                 Click="ModsTab_Click"
@@ -71,20 +76,120 @@
                 Icon="{ui:SymbolIcon Symbol=Apps24}" />
             <ui:Button
                 x:Name="SavesTab"
-                Margin="0,0,8,0"
+                Grid.Column="1"
                 Padding="16,6"
                 Click="SavesTab_Click"
                 Content="存档管理"
                 Icon="{ui:SymbolIcon Symbol=Folder24}" />
+            <TextBlock
+                Grid.Column="2"
+                Margin="12,0,12,0"
+                VerticalAlignment="Center"
+                Style="{StaticResource CaptionText}"
+                Text="{Binding GameDir}"
+                TextTrimming="CharacterEllipsis"
+                ToolTip="{Binding GameDir}" />
             <ui:Button
+                Grid.Column="3"
                 Padding="16,6"
                 Click="OpenFolder_Click"
                 Content="打开游戏目录"
                 Icon="{ui:SymbolIcon Symbol=FolderOpen24}" />
-        </StackPanel>
+        </Grid>
+
+        <!--  ===== 模组工具栏 =====  -->
+        <Grid x:Name="ModsToolbar" Grid.Row="2" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ui:Button
+                Grid.Column="0"
+                Margin="0,0,8,0"
+                Appearance="Primary"
+                Command="{Binding ImportModsCommand}"
+                Content="导入模组"
+                Icon="{ui:SymbolIcon Symbol=Add24}" />
+            <ui:Button
+                Grid.Column="1"
+                Margin="0,0,8,0"
+                Command="{Binding EnableAllModsCommand}"
+                Content="全部启用" />
+            <ui:Button
+                Grid.Column="2"
+                Margin="0,0,8,0"
+                Command="{Binding DisableAllModsCommand}"
+                Content="全部禁用" />
+            <ui:Button
+                Grid.Column="3"
+                Margin="0,0,8,0"
+                Command="{Binding OpenModsFolderCommand}"
+                Content="打开模组目录"
+                Icon="{ui:SymbolIcon Symbol=FolderOpen24}" />
+            <TextBlock
+                Grid.Column="4"
+                Margin="0,0,12,0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Style="{StaticResource CaptionText}"
+                Text="{Binding ModCountText}" />
+            <ui:TextBox
+                Grid.Column="5"
+                Width="200"
+                VerticalAlignment="Center"
+                ClearButtonEnabled="True"
+                PlaceholderText="搜索模组…"
+                Text="{Binding ModSearchText, UpdateSourceTrigger=PropertyChanged}" />
+        </Grid>
+
+        <!--  ===== 存档工具栏 =====  -->
+        <Grid
+            x:Name="SavesToolbar"
+            Grid.Row="2"
+            Margin="0,0,0,12"
+            Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ui:Button
+                Grid.Column="0"
+                Margin="0,0,8,0"
+                Appearance="Primary"
+                Command="{Binding ImportSaveFolderCommand}"
+                Content="导入存档"
+                Icon="{ui:SymbolIcon Symbol=Add24}"
+                ToolTip="从其他游戏目录导入存档文件夹（也可选择含多个存档的父目录）" />
+            <ui:Button
+                Grid.Column="1"
+                Margin="0,0,8,0"
+                Command="{Binding ImportSaveZipCommand}"
+                Content="导入压缩包"
+                Icon="{ui:SymbolIcon Symbol=FolderZip24}"
+                ToolTip="从 .zip 压缩包导入存档（地图下载常见格式）" />
+            <ui:Button
+                Grid.Column="2"
+                Margin="0,0,8,0"
+                Command="{Binding OpenSavesFolderCommand}"
+                Content="打开存档目录"
+                Icon="{ui:SymbolIcon Symbol=FolderOpen24}" />
+            <TextBlock
+                Grid.Column="4"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Style="{StaticResource CaptionText}"
+                Text="{Binding SaveCountText}" />
+        </Grid>
 
         <!--  内容区域  -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="3">
 
             <!--  模组列表  -->
             <ListBox
@@ -115,9 +220,8 @@
                                 Grid.Column="0"
                                 Margin="8,0,12,0"
                                 VerticalAlignment="Center"
-                                Checked="ModToggled"
-                                IsChecked="{Binding IsEnabled}"
-                                Unchecked="ModToggled" />
+                                IsChecked="{Binding IsEnabled, Mode=TwoWay}"
+                                ToolTip="勾选启用 / 取消勾选禁用" />
                             <TextBlock
                                 Grid.Column="1"
                                 Margin="0,0,12,0"
@@ -170,43 +274,125 @@
                 </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <ui:Card Margin="0,0,0,6" Padding="14,10" Style="{StaticResource SurfaceCard}"><Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                Grid.Column="0"
-                                Margin="0,0,12,0"
-                                VerticalAlignment="Center"
-                                Style="{StaticResource BodyText}"
-                                Text="{Binding FolderName}"
-                                TextTrimming="CharacterEllipsis"
-                                TextWrapping="NoWrap" />
-                            <TextBlock
-                                Grid.Column="1"
-                                Margin="0,0,12,0"
-                                VerticalAlignment="Center"
-                                Style="{StaticResource CaptionText}"
-                                Text="{Binding LastPlayed}" />
-                            <ui:Button
-                                Grid.Column="2"
-                                Margin="0,0,8,0"
-                                VerticalAlignment="Center"
-                                Appearance="Secondary"
-                                Command="{Binding DataContext.OpenSaveFolderCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                CommandParameter="{Binding FolderPath}"
-                                Content="打开" />
-                            <ui:Button
-                                Grid.Column="3"
-                                VerticalAlignment="Center"
-                                Appearance="Danger"
-                                Command="{Binding DataContext.DeleteSaveCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                CommandParameter="{Binding}"
-                                Content="删除" />
-                        </Grid></ui:Card>
+                        <ui:Card Margin="0,0,0,6" Padding="14,10" Style="{StaticResource SurfaceCard}">
+                            <Grid>
+
+                                <!--  常规态：名称 / 大小 / 时间 / 操作  -->
+                                <Grid>
+                                    <Grid.Style>
+                                        <Style TargetType="Grid">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsRenaming}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Grid.Style>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        Margin="0,0,12,0"
+                                        VerticalAlignment="Center"
+                                        Style="{StaticResource BodyText}"
+                                        Text="{Binding FolderName}"
+                                        TextTrimming="CharacterEllipsis"
+                                        TextWrapping="NoWrap" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        Margin="0,0,12,0"
+                                        VerticalAlignment="Center"
+                                        Style="{StaticResource CaptionText}"
+                                        Text="{Binding Size}" />
+                                    <TextBlock
+                                        Grid.Column="2"
+                                        Margin="0,0,12,0"
+                                        VerticalAlignment="Center"
+                                        Style="{StaticResource CaptionText}"
+                                        Text="{Binding LastPlayed}" />
+                                    <ui:Button
+                                        Grid.Column="3"
+                                        Margin="0,0,8,0"
+                                        VerticalAlignment="Center"
+                                        Appearance="Secondary"
+                                        Command="{Binding DataContext.OpenSaveFolderCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                        CommandParameter="{Binding FolderPath}"
+                                        Content="打开" />
+                                    <ui:Button
+                                        Grid.Column="4"
+                                        Margin="0,0,8,0"
+                                        VerticalAlignment="Center"
+                                        Appearance="Secondary"
+                                        Command="{Binding DataContext.ExportSaveCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                        CommandParameter="{Binding}"
+                                        Content="备份"
+                                        ToolTip="导出为 .zip 压缩包" />
+                                    <ui:Button
+                                        Grid.Column="5"
+                                        Margin="0,0,8,0"
+                                        VerticalAlignment="Center"
+                                        Appearance="Secondary"
+                                        Command="{Binding DataContext.BeginRenameSaveCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                        CommandParameter="{Binding}"
+                                        Content="重命名" />
+                                    <ui:Button
+                                        Grid.Column="6"
+                                        VerticalAlignment="Center"
+                                        Appearance="Danger"
+                                        Command="{Binding DataContext.DeleteSaveCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                        CommandParameter="{Binding}"
+                                        Content="删除" />
+                                </Grid>
+
+                                <!--  重命名态：输入框 + 确定 / 取消  -->
+                                <Grid>
+                                    <Grid.Style>
+                                        <Style TargetType="Grid">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsRenaming}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Grid.Style>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ui:TextBox
+                                        Grid.Column="0"
+                                        Margin="0,0,12,0"
+                                        VerticalAlignment="Center"
+                                        Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}" />
+                                    <ui:Button
+                                        Grid.Column="1"
+                                        Margin="0,0,8,0"
+                                        VerticalAlignment="Center"
+                                        Appearance="Primary"
+                                        Command="{Binding DataContext.ConfirmRenameSaveCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                        CommandParameter="{Binding}"
+                                        Content="确定" />
+                                    <ui:Button
+                                        Grid.Column="2"
+                                        VerticalAlignment="Center"
+                                        Appearance="Secondary"
+                                        Command="{Binding DataContext.CancelRenameSaveCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                        CommandParameter="{Binding}"
+                                        Content="取消" />
+                                </Grid>
+
+                            </Grid>
+                        </ui:Card>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
@@ -223,7 +409,7 @@
 
         <ui:SnackbarPresenter
             x:Name="SnackbarPresenter"
-            Grid.RowSpan="3"
+            Grid.RowSpan="4"
             Panel.ZIndex="2" />
     </Grid>
 </Page>

@@ -30,8 +30,21 @@ namespace VibrantbitLauncher.Services
         public string BackgroundImagePath { get; set; } = string.Empty;
         /// <summary>背景图显示不透明度。</summary>
         public double BackgroundImageOpacity { get; set; } = 0.85;
+        /// <summary>日志最低记录等级：Verbose / Debug / Information / Warning / Error / Fatal。</summary>
+        public string LogLevel { get; set; } = "Information";
+        /// <summary>日志文件保留天数，超期自动清理。</summary>
+        public int LogRetentionDays { get; set; } = 7;
+        /// <summary>是否同时把日志写到调试器输出（Visual Studio 输出窗口）。</summary>
+        public bool LogToDebugOutput { get; set; } = true;
         public string MinecraftFolder { get; set; } = "./.minecraft";
         public string JavaPath { get; set; } = string.Empty;
+
+        // ===== 联机（EasyTier） =====
+        /// <summary>EasyTier 中继节点地址，默认用社区免费共享节点。</summary>
+        public string EasyTierRelayServer { get; set; } = "tcp://easytier.weiai.org.cn:11010";
+        /// <summary>上次房主侧使用的联机密钥（同时作为网络名与网络密码）。</summary>
+        public string EasyTierNetworkKey { get; set; } = string.Empty;
+
         public List<MicrosoftAccount> MicrosoftAccounts { get; set; } = new();
         public List<YggdrasilAccount> YggdrasilAccounts { get; set; } = new();
         public List<OfflineAccount> OfflineAccounts { get; set; } = new();
@@ -57,6 +70,14 @@ namespace VibrantbitLauncher.Services
         };
 
         public static AppSettings Current { get; private set; } = new();
+
+        /// <summary>
+        /// 配置文件读写的互斥锁。
+        /// Save() 会被 UI 线程（改设置）和后台线程（安装完成、令牌刷新后保存账户）同时调用，
+        /// 没有保护地并发写同一个文件会写出半截 JSON —— 下次启动解析失败就回退默认值，
+        /// 表现是"设置全丢、每次都弹开机向导"。
+        /// </summary>
+        private static readonly object ConfigLock = new();
 
         /// <summary>
         /// 取当前生效的 .minecraft 目录；未配置时回退到工作目录下的 ./.minecraft。
@@ -93,18 +114,24 @@ namespace VibrantbitLauncher.Services
 
         public static void Save()
         {
-            try
+            lock (ConfigLock)
             {
-                Current.MinecraftFolder = MainWindowViewModel.MainModel.MinecraftFolder ?? "./.minecraft";
-                Current.JavaPath = MainWindowViewModel.MainModel.JavaPath ?? string.Empty;
-                Current.IsMicrosoftAccount = MainWindowViewModel.MainModel.IsMicrosoftAccount;
+                try
+                {
+                    Current.MinecraftFolder = MainWindowViewModel.MainModel.MinecraftFolder ?? "./.minecraft";
+                    Current.JavaPath = MainWindowViewModel.MainModel.JavaPath ?? string.Empty;
+                    Current.IsMicrosoftAccount = MainWindowViewModel.MainModel.IsMicrosoftAccount;
 
-                var json = JsonSerializer.Serialize(Current, JsonOptions);
-                File.WriteAllText(ConfigPath, json);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[SettingsService.Save] 保存失败: {ex}");
+                    // 先写临时文件再原子替换：写到一半被打断也不会留下半截 JSON
+                    var json = JsonSerializer.Serialize(Current, JsonOptions);
+                    var tempPath = ConfigPath + ".tmp";
+                    File.WriteAllText(tempPath, json);
+                    File.Move(tempPath, ConfigPath, overwrite: true);
+                }
+                catch (Exception ex)
+                {
+                    Serilog.Log.Error(ex, "配置保存失败：{Path}", ConfigPath);
+                }
             }
         }
 
@@ -211,9 +238,10 @@ namespace VibrantbitLauncher.Services
         }
 
         /// <summary>
-        /// 刷新主题：先写入当前主题色 / 渐变，再重载 WPF-UI 的主题词典，最后按明暗主题重算背景遮罩。
+        /// 刷新主题：先写入当前主题色 / 渐变，重载 WPF-UI 的主题词典，再按明暗主题重算背景遮罩，
+        /// 最后修复各窗口底色。
         ///
-        /// 步骤顺序不能反：主题词典里不少强调色画刷（例如 AccentButtonBackground ← AccentFillColorDefault）
+        /// ①→② 的顺序不能反：主题词典里不少强调色画刷（例如 AccentButtonBackground ← AccentFillColorDefault）
         /// 是在「词典加载时」求值的，必须先有新的主题色、再重载词典，它们才会按新颜色重算，
         /// 否则会出现「换了主题色但按钮等控件仍是旧色」的问题。
         ///
@@ -240,6 +268,36 @@ namespace VibrantbitLauncher.Services
                 theme == ApplicationTheme.Dark
                     ? Color.FromArgb(0x8C, 0x00, 0x00, 0x00)
                     : Color.FromArgb(0x80, 0xFF, 0xFF, 0xFF));
+
+            // ④ 最后修复各窗口底色，见方法说明
+            RepairWindowBackgrounds();
+        }
+
+        /// <summary>
+        /// 把「被固定成某个具体颜色」的窗口底色重新指回主题画刷，使其随明暗主题变化。
+        ///
+        /// WPF-UI 在重载主题词典时，会把没走系统背板的窗口（向导、各类登录窗口等）Background
+        /// 写死成一个「切换前」的色刷，之后不再更新：切到暗色后窗口仍是浅色底，而文字画刷已经
+        /// 变成白色 —— 看上去就是整个界面「全白」。这里把它重新指回主题词典（DynamicResource），
+        /// 换主题即自动跟随。背景透明的窗口（Mica 主窗口）保持原样，避免把系统材质盖住。
+        /// </summary>
+        private static void RepairWindowBackgrounds()
+        {
+            var app = Application.Current;
+            if (app == null)
+                return;
+
+            foreach (System.Windows.Window window in app.Windows)
+            {
+                var background = window.Background;
+
+                var isTransparent = background == null
+                    || (background is SolidColorBrush solid && solid.Color.A == 0);
+                if (isTransparent)
+                    continue;
+
+                window.SetResourceReference(System.Windows.Window.BackgroundProperty, "ApplicationBackgroundBrush");
+            }
         }
 
         /// <summary>

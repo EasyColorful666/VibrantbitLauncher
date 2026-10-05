@@ -20,11 +20,14 @@ namespace VibrantbitLauncher.Views.Windows
     /// <summary>
     /// OfflineAuthenticatorWindow.xaml 的交互逻辑
     /// </summary>
-    public partial class OfflineAuthenticatorWindow : Window
+    public partial class OfflineAuthenticatorWindow : FluentWindow
     {
         public OfflineAuthenticatorWindow()
         {
             InitializeComponent();
+
+            // 兜底：挂到主窗口上，CenterOwner 才会真的居中于主窗口
+            Owner ??= Application.Current?.MainWindow;
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)

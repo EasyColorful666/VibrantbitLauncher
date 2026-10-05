@@ -1,27 +1,38 @@
 ﻿using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using MinecraftLaunch.Base.Models.Game;
 using MinecraftLaunch.Components.Logging;
+using Wpf.Ui.Controls;
 
 namespace VibrantbitLauncher.Views.Windows
 {
-    public partial class CrashAnalysisWindow : Window
+    public partial class CrashAnalysisWindow : FluentWindow
     {
         private readonly string _crashReportFolder;
 
-        public CrashAnalysisWindow(MinecraftEntry minecraft)
+        public CrashAnalysisWindow(MinecraftEntry? minecraft)
         {
             InitializeComponent();
 
-            var analyzer = new LogAnalyzer(minecraft);
-            var result = analyzer.Analyze();
+            if (minecraft != null)
+            {
+                var analyzer = new LogAnalyzer(minecraft);
+                var result = analyzer.Analyze();
 
-            foreach (var reason in result.CrashReasons)
-                CrashReasonsList.Items.Add(reason.ToString());
+                foreach (var reason in result.CrashReasons)
+                    CrashReasonsList.Items.Add(reason.ToString());
 
-            foreach (var mod in result.SuspiciousMods)
-                SuspiciousModsList.Items.Add(mod.ToString());
+                foreach (var mod in result.SuspiciousMods)
+                    SuspiciousModsList.Items.Add(mod.ToString());
+            }
+            else
+            {
+                // 拿不到版本信息（例如已卸载）时也给个占位，避免空白窗口
+                CrashReasonsList.Items.Add("未检测到明确的崩溃原因，请查看崩溃报告文件。");
+                SuspiciousModsList.Items.Add("未检测到可疑模组。");
+            }
 
             if (CrashReasonsList.Items.Count == 0)
                 CrashReasonsList.Items.Add("未检测到明确的崩溃原因，请查看崩溃报告文件。");
@@ -48,13 +59,27 @@ namespace VibrantbitLauncher.Views.Windows
                 }
                 else
                 {
-                    MessageBox.Show("崩溃报告目录不存在：" + _crashReportFolder, "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                    _ = ShowMessageAsync("提示", "崩溃报告目录不存在：" + _crashReportFolder);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("无法打开目录：" + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                _ = ShowMessageAsync("错误", "无法打开目录：" + ex.Message);
             }
+        }
+
+        /// <summary>显示一个跟随明暗主题的消息框（原生 MessageBox 固定为系统外观）。</summary>
+        private Task ShowMessageAsync(string title, string message)
+        {
+            var box = new Wpf.Ui.Controls.MessageBox
+            {
+                Title = title,
+                Content = message,
+                CloseButtonText = "确定",
+                Owner = this,
+            };
+
+            return box.ShowDialogAsync();
         }
     }
 }

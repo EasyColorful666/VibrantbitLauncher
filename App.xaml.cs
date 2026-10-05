@@ -62,6 +62,8 @@ namespace VibrantbitLauncher
                 services.AddSingleton<DownloadResourcesPage>();
                 services.AddSingleton<DownloadResourcesViewModel>();
                 services.AddSingleton<ModPage>();
+                // 联机内核：驱动外挂的 easytier-core.exe，只有点了「启动服务」才会拉起进程
+                services.AddSingleton<EasyTierService>();
                 services.AddSingleton<MultiplayerPage>();
                 services.AddSingleton<MultiplayerPageViewModel>();
                 services.AddSingleton<InstallPage>();
@@ -93,13 +95,23 @@ namespace VibrantbitLauncher
         /// </summary>
         private async void OnStartup(object sender, StartupEventArgs e)
         { 
-            InitLogging();
-            Log.Information("VibrantbitLauncher 启动");
+            // ① 先把日志系统立起来：用内置默认值也无所谓，关键是让后面每一步失败都留得下证据
+            LogService.Initialize(
+                SettingsService.Current.LogLevel,
+                SettingsService.Current.LogRetentionDays,
+                SettingsService.Current.LogToDebugOutput);
 
-            // 先读配置再建窗口：主窗口在 _host.StartAsync() 期间就会构造页面，
-            // 页面初始化会读写 SettingsService.Current。若此时配置尚未加载，
-            // 页面保存出去的默认值会把磁盘上的真实配置覆盖掉。
+            // ② 先读配置再建窗口：主窗口在 _host.StartAsync() 期间就会构造页面，
+            //    页面初始化会读写 SettingsService.Current。若此时配置尚未加载，
+            //    页面保存出去的默认值会把磁盘上的真实配置覆盖掉。
             SettingsService.Load();
+
+            // ③ 按用户配置重建日志（等级 / 保留天数 / 是否输出到调试器）
+            LogService.Reinitialize();
+            // 用 InformationalVersion（如 "1.0.4.1"），并去掉 SourceLink 附加的 "+<commit>" 构建元数据；
+            // 不用 GetName().Version（程序集版本，末尾会补 0 成四段）。
+            // 项目版本号规则：小更新在末尾加一段（1.0.4 → 1.0.4.1），大更新第三段 +1（1.0.4 → 1.0.5）。
+            LogService.WriteStartupBanner(GetDisplayVersion());
 
             await _host.StartAsync();
 
@@ -123,8 +135,9 @@ namespace VibrantbitLauncher
                 settings.IsEnableFragment = false; // 是否启用分片下载
             });
 
-            // 修复所有版本 JSON 中 releaseTime 的时区格式（+0000 → +00:00）
-            FixVersionJsonDateTimeFormat(SettingsService.Current.MinecraftFolder);
+            // 修复所有版本 JSON 中 releaseTime 的时区格式（+0000 → +00:00）。
+            // 装了几十个版本时这是几十次文件读写，放到后台做，别拖住首帧渲染。
+            await Task.Run(() => FixVersionJsonDateTimeFormat(SettingsService.Current.MinecraftFolder));
 
             // 首次运行显示欢迎窗口
             if (SettingsService.Current.IsFirstRun)
@@ -146,6 +159,25 @@ namespace VibrantbitLauncher
         }
 
         /// <summary>
+        /// 取用于展示的版本号（形如 "1.0.4" 或 "1.0.4.1"）。优先 <see cref="AssemblyInformationalVersionAttribute"/>，
+        /// 并剥掉 SourceLink 附加的 "+&lt;commit&gt;" 构建元数据。
+        /// </summary>
+        /// <remarks>
+        /// 项目版本号规则：小更新在末尾加一段（1.0.4 → 1.0.4.1），大更新第三段 +1（1.0.4 → 1.0.5）。
+        /// 这里原样返回 csproj 的 &lt;Version&gt;，不做段数裁剪，四段号也能完整显示。
+        /// </remarks>
+        public static string GetDisplayVersion()
+        {
+            var informational = Assembly.GetEntryAssembly()?
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+                .InformationalVersion;
+            if (!string.IsNullOrWhiteSpace(informational))
+                return informational.Split('+')[0];
+
+            return Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "unknown";
+        }
+
+        /// <summary>
         /// Occurs when the application is closing.
         /// </summary>
         private async void OnExit(object sender, ExitEventArgs e)
@@ -158,42 +190,9 @@ namespace VibrantbitLauncher
         }
 
         /// <summary>
-        /// 初始化日志：写入 logs/ 目录，并接管全局未处理异常。
-        /// 原先未处理异常只被写入 Debug 输出后直接吞掉，出问题时无从排查。
-        /// </summary>
-        private static void InitLogging()
-        {
-            try
-            {
-                var logDir = Path.Combine(AppContext.BaseDirectory, "logs");
-                Directory.CreateDirectory(logDir);
-
-                Log.Logger = new LoggerConfiguration()
-                    .MinimumLevel.Information()
-                    .WriteTo.File(
-                        Path.Combine(logDir, "vibrantbit-.log"),
-                        rollingInterval: RollingInterval.Day,
-                        retainedFileCountLimit: 7,
-                        shared: true)
-                    .CreateLogger();
-
-                AppDomain.CurrentDomain.UnhandledException += (_, args) =>
-                    Log.Fatal(args.ExceptionObject as Exception, "未处理的应用域异常");
-
-                TaskScheduler.UnobservedTaskException += (_, args) =>
-                {
-                    Log.Error(args.Exception, "未观察到的任务异常");
-                    args.SetObserved();
-                };
-            }
-            catch
-            {
-                // 日志初始化失败不应影响启动
-            }
-        }
-
-        /// <summary>
         /// Occurs when an exception is thrown by an application but not handled.
+        /// 日志系统（LogService）已接管 AppDomain / TaskScheduler 级别的兜底，
+        /// 这里只处理 UI 线程异常 —— 它是唯一能「记一笔然后继续跑」的。
         /// </summary>
         private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
@@ -213,7 +212,6 @@ namespace VibrantbitLauncher
 
                 var regex = new System.Text.RegularExpressions.Regex(@"([+-]\d{2})(\d{2})""");
                 int fixedCount = 0;
-
                 foreach (var dir in Directory.GetDirectories(versionsDir))
                 {
                     var dirName = Path.GetFileName(dir);
@@ -226,16 +224,16 @@ namespace VibrantbitLauncher
                         var fixedText = regex.Replace(text, "$1:$2\"");
                         File.WriteAllText(jsonPath, fixedText);
                         fixedCount++;
-                        System.Diagnostics.Debug.WriteLine($"[App] Fixed DateTime format in {jsonPath}");
+                        Log.Debug("修正版本 JSON 的时区格式：{Path}", jsonPath);
                     }
                 }
 
                 if (fixedCount > 0)
-                    System.Diagnostics.Debug.WriteLine($"[App] Fixed {fixedCount} version JSON files");
+                    Log.Information("已修正 {Count} 个版本 JSON 的时区格式", fixedCount);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[App] FixVersionJsonDateTimeFormat failed: {ex.Message}");
+                Log.Warning(ex, "修正版本 JSON 时区格式失败：{Folder}", mcFolder);
             }
         }
     }

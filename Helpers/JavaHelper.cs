@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -17,9 +17,20 @@ namespace VibrantbitLauncher.Helpers
     /// 直接抛 ArgumentException，导致整个枚举中断、结果为空 —— 这正是设置页和开机向导
     /// 「检测不到 Java」的原因（机器上其实装了多个 JDK）。
     /// 这里改为自己收集候选路径并逐个解析，单项失败不影响其它项。
+    ///
+    /// 另外，探测任何候选之前都必须先过一遍静态体检（见 <see cref="IsUsableJava"/>）：
+    /// Windows 的 PATH 里常混着 Oracle 的 javapath / java8path「转发器」——那是个只有几个
+    /// exe、没有 java.dll 的目录，靠注册表里的 JavaHome 转发到真正的 JRE。
+    /// 一旦注册表项被清空（Java 卸载不干净就会这样），执行转发器会弹出
+    /// 「Error: could not find java.dll」/「Could not find Java SE Runtime Environment」
+    /// 的**模态**对话框，探测线程被挂住，用户每进一次设置页 / 运行页都要点掉好几个框。
+    /// 静态体检只读文件系统、不启动任何进程，能在执行之前就把这类转发器排除掉。
     /// </summary>
     public static class JavaHelper
     {
+        /// <summary>单个候选的探测超时。超时即跳过，避免被半损坏的 Java 卡住整条枚举流程。</summary>
+        private static readonly TimeSpan ProbeTimeout = TimeSpan.FromSeconds(5);
+
         public static async Task<List<JavaEntry>> FindJavasAsync()
         {
             var result = new List<JavaEntry>();
@@ -32,9 +43,18 @@ namespace VibrantbitLauncher.Helpers
                 if (string.IsNullOrWhiteSpace(candidate) || !tried.Add(candidate))
                     continue;
 
+                // 静态体检：转发器 shim、0 字节占位文件、被拆散的目录在这里就被排除，绝不执行
+                if (!IsUsableJava(candidate))
+                    continue;
+
                 try
                 {
-                    var info = await JavaUtil.GetJavaInfoAsync(candidate);
+                    // 探测进程有超时保护：即使某个 Java 仍会弹窗，也只损失这一项，不会卡住枚举
+                    var probe = JavaUtil.GetJavaInfoAsync(candidate);
+                    if (await Task.WhenAny(probe, Task.Delay(ProbeTimeout)) != probe)
+                        continue;
+
+                    var info = await probe;
                     if (info == null || string.IsNullOrWhiteSpace(info.JavaPath))
                         continue;
 
@@ -65,6 +85,60 @@ namespace VibrantbitLauncher.Helpers
         {
             var javas = await FindJavasAsync();
             return javas.FirstOrDefault()?.JavaPath;
+        }
+
+        /// <summary>
+        /// 判断一个 java.exe / javaw.exe 是否来自**完整**的 Java 安装，即能不能直接拿来启动。
+        ///
+        /// 判据：同目录存在 java.dll（真实 JDK / JRE / Minecraft 自带运行时的 bin 目录都有），
+        /// 或者相邻的 <c>server\jvm.dll</c> / <c>client\jvm.dll</c> 存在。
+        /// Oracle 的 javapath / java8path 转发器目录里只有几个 exe，会被判为不可用。
+        ///
+        /// 这个方法是纯文件系统检查，**不会启动任何进程** —— 这一点是刻意的：
+        /// 转发器一旦被执行就会弹模态错误框，把调用方（UI 线程或探测循环）挂住。
+        /// </summary>
+        public static bool IsUsableJava(string? exePath)
+        {
+            if (string.IsNullOrWhiteSpace(exePath))
+                return false;
+
+            try
+            {
+                var file = new FileInfo(exePath);
+                if (!file.Exists || file.Length < 4096)   // 0 字节 / 被截断的占位文件
+                    return false;
+
+                var dir = file.DirectoryName;
+                if (string.IsNullOrEmpty(dir))
+                    return false;
+
+                // 已知的转发器目录：不看内容，直接排除
+                if (IsShimDirectory(dir))
+                    return false;
+
+                return File.Exists(Path.Combine(dir, "java.dll"))
+                    || File.Exists(Path.Combine(dir, "jvm.dll"))
+                    || File.Exists(Path.Combine(dir, "server", "jvm.dll"))
+                    || File.Exists(Path.Combine(dir, "client", "jvm.dll"));
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// PATH 里常见的 Java 转发器目录。
+        /// 它们存放的是「转发到注册表所指 JRE」的 shim，本身不含运行时。
+        /// </summary>
+        private static bool IsShimDirectory(string directory)
+        {
+            var normalized = directory.Replace('/', '\\');
+
+            return normalized.Contains(@"\Oracle\Java\javapath", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains(@"\Oracle\Java\java8path", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains(@"\Common Files\Oracle\", StringComparison.OrdinalIgnoreCase)
+                || normalized.Contains(@"\Microsoft\WindowsApps", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string ResolveRealPath(string path)

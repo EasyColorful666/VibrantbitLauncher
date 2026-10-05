@@ -26,29 +26,33 @@
             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
             SelectionChanged="CategoryList_SelectionChanged">
 
-            <!--  分组标题：禁用项，不参与选中  -->
-            <ListBoxItem IsEnabled="False">
-                <TextBlock Style="{StaticResource CaptionText}" Text="游戏" />
-            </ListBoxItem>
+            <ListBox.ItemContainerStyle>
+                <Style BasedOn="{StaticResource {x:Type ListBoxItem}}" TargetType="ListBoxItem">
+                    <Setter Property="Margin" Value="0,1" />
+                    <Setter Property="Padding" Value="12,9" />
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                </Style>
+            </ListBox.ItemContainerStyle>
 
+            <!--
+                原版游戏：把原来的「Minecraft」分组标题与「原版游戏」条合并成一条
+                （分组标题本是不可选中的装饰项，合并后点一次就能进原版下载页）。
+            -->
             <ListBoxItem IsSelected="True" Tag="0">
                 <StackPanel Orientation="Horizontal">
-                    <ui:SymbolIcon Symbol="Globe24" />
-                    <TextBlock Margin="10,0,0,0" Text="原版游戏" />
+                    <ui:SymbolIcon Symbol="Cube24" />
+                    <TextBlock Margin="10,0,0,0" Text="Minecraft" />
                 </StackPanel>
             </ListBoxItem>
 
-            <ListBoxItem IsEnabled="False">
-                <TextBlock
-                    Margin="0,14,0,0"
-                    Style="{StaticResource CaptionText}"
-                    Text="社区资源" />
+            <ListBoxItem IsEnabled="False" Padding="12,22,12,6">
+                <TextBlock Style="{StaticResource CaptionText}" Text="社区资源" />
             </ListBoxItem>
 
             <ListBoxItem Tag="1">
                 <StackPanel Orientation="Horizontal">
                     <ui:SymbolIcon Symbol="Apps24" />
-                    <TextBlock Margin="10,0,0,0" Text="Mod" />
+                    <TextBlock Margin="10,0,0,0" Text="模组" />
                 </StackPanel>
             </ListBoxItem>
 
@@ -61,12 +65,19 @@
 
             <ListBoxItem Tag="3">
                 <StackPanel Orientation="Horizontal">
-                    <ui:SymbolIcon Symbol="ColorBackground24" />
-                    <TextBlock Margin="10,0,0,0" Text="资源包" />
+                    <ui:SymbolIcon Symbol="Code24" />
+                    <TextBlock Margin="10,0,0,0" Text="数据包" />
                 </StackPanel>
             </ListBoxItem>
 
             <ListBoxItem Tag="4">
+                <StackPanel Orientation="Horizontal">
+                    <ui:SymbolIcon Symbol="Layer24" />
+                    <TextBlock Margin="10,0,0,0" Text="资源包" />
+                </StackPanel>
+            </ListBoxItem>
+
+            <ListBoxItem Tag="5">
                 <StackPanel Orientation="Horizontal">
                     <ui:SymbolIcon Symbol="WeatherSunny24" />
                     <TextBlock Margin="10,0,0,0" Text="光影" />

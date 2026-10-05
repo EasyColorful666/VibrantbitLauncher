@@ -5,11 +5,18 @@
     <TargetFramework>net10.0-windows7.0</TargetFramework>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>icon.ico</ApplicationIcon>
+    <!-- 版本号唯一来源：启动日志横幅、设置页「关于」均从此读取 -->
+    <Version>1.0.4.1</Version>
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <Platforms>AnyCPU;x64;x86</Platforms>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+    <!-- 不包含运行时 -->
+    <PublishTrimmed>false</PublishTrimmed>
+    <!-- 可选：剪裁未使用代码，FDD也支持 -->
   </PropertyGroup>
 
   <!-- 发布时单个文件（不含运行时），仅 Release 发布时生效 -->

@@ -11,15 +11,15 @@
     Title="VibrantbitLauncher"
     Width="1280"
     Height="800"
+    MinWidth="1180"
+    MinHeight="720"
     d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel}"
     Background="{StaticResource AppWindowBackgroundBrush}"
     ExtendsContentIntoTitleBar="True"
     FontFamily="{StaticResource AppFont}"
     FontSize="{StaticResource FontSizeBody}"
     Icon="/Views/Windows/icon.ico"
-    MinHeight="720"
-    MinWidth="1180"
-    ResizeMode="CanResize"
+    ResizeMode="NoResize"
     WindowBackdropType="Mica"
     WindowCornerPreference="Round"
     WindowStartupLocation="CenterScreen"
@@ -49,59 +49,59 @@
         </Border>
 
         <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-        <ui:NavigationView
-            x:Name="RootNavigation"
-            Grid.Row="1"
-            Background="Transparent"
-            PaneDisplayMode="LeftFluent">
+            <ui:NavigationView
+                x:Name="RootNavigation"
+                Grid.Row="1"
+                Background="Transparent"
+                PaneDisplayMode="LeftFluent">
 
-            <ui:NavigationView.ContentOverlay>
-                <Grid>
-                    <ui:SnackbarPresenter x:Name="SnackbarPresenter" />
-                </Grid>
-            </ui:NavigationView.ContentOverlay>
+                <ui:NavigationView.ContentOverlay>
+                    <Grid>
+                        <ui:SnackbarPresenter x:Name="SnackbarPresenter" />
+                    </Grid>
+                </ui:NavigationView.ContentOverlay>
 
-            <ui:NavigationView.MenuItems>
-                <ui:NavigationViewItem
-                    Content="启动"
-                    Icon="{ui:SymbolIcon Symbol=Play24}"
-                    TargetPageType="{x:Type pages:LaunchPage}" />
-                <ui:NavigationViewItem
-                    Content="账户"
-                    Icon="{ui:SymbolIcon Symbol=Person24}"
-                    TargetPageType="{x:Type pages:AccountPage}" />
-                <ui:NavigationViewItem
-                    Content="下载中心"
-                    Icon="{ui:SymbolIcon Symbol=ArrowCircleDown24}"
-                    TargetPageType="{x:Type pages:DownloadHubPage}" />
-                <ui:NavigationViewItem
-                    Content="下载任务"
-                    Icon="{ui:SymbolIcon Symbol=History24}"
-                    TargetPageType="{x:Type pages:DownloadCenterPage}" />
-                <ui:NavigationViewItem
-                    Content="多人"
-                    Icon="{ui:SymbolIcon Symbol=PeopleCommunity24}"
-                    TargetPageType="{x:Type pages:MultiplayerPage}" />
-            </ui:NavigationView.MenuItems>
+                <ui:NavigationView.MenuItems>
+                    <ui:NavigationViewItem
+                        Content="启动"
+                        Icon="{ui:SymbolIcon Symbol=Play24}"
+                        TargetPageType="{x:Type pages:LaunchPage}" />
+                    <ui:NavigationViewItem
+                        Content="账户"
+                        Icon="{ui:SymbolIcon Symbol=Person24}"
+                        TargetPageType="{x:Type pages:AccountPage}" />
+                    <ui:NavigationViewItem
+                        Content="下载中心"
+                        Icon="{ui:SymbolIcon Symbol=ArrowCircleDown24}"
+                        TargetPageType="{x:Type pages:DownloadHubPage}" />
+                    <ui:NavigationViewItem
+                        Content="下载任务"
+                        Icon="{ui:SymbolIcon Symbol=History24}"
+                        TargetPageType="{x:Type pages:DownloadCenterPage}" />
+                    <ui:NavigationViewItem
+                        Content="多人"
+                        Icon="{ui:SymbolIcon Symbol=PeopleCommunity24}"
+                        TargetPageType="{x:Type pages:MultiplayerPage}" />
+                </ui:NavigationView.MenuItems>
 
-            <ui:NavigationView.FooterMenuItems>
-                <ui:NavigationViewItem
-                    Content="设置"
-                    Icon="{ui:SymbolIcon Symbol=Settings24}"
-                    TargetPageType="{x:Type pages:SettingsPage}" />
-            </ui:NavigationView.FooterMenuItems>
+                <ui:NavigationView.FooterMenuItems>
+                    <ui:NavigationViewItem
+                        Content="设置"
+                        Icon="{ui:SymbolIcon Symbol=Settings24}"
+                        TargetPageType="{x:Type pages:SettingsPage}" />
+                </ui:NavigationView.FooterMenuItems>
 
-        </ui:NavigationView>
+            </ui:NavigationView>
 
             <ui:TitleBar
                 x:Name="TitleBar"
-                Grid.Row="0"
                 Title="VibrantbitLauncher"
+                Grid.Row="0"
                 CloseWindowByDoubleClickOnIcon="True"
                 FontSize="{StaticResource FontSizeBodyLarge}"
                 ShowMaximize="True" />

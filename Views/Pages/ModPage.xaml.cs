@@ -143,6 +143,63 @@ namespace VibrantbitLauncher.Views.Pages
             }
         }
 
+        /// <summary>
+        /// 从下载链接取扩展名（小写、带点）。
+        ///
+        /// 链接可能带查询串或 CDN 的路径后缀（如 `...sodium.jar?fabric-1.21.4.jar`），
+        /// 因此先去查询串和片段，再对路径取扩展名。识别不出来的（版本号路径如 `/download/1.21.4`、
+        /// 纯数字后缀 `.4`、无扩展名）一律按 `.jar` 处理 —— Modrinth 上模组/整合包/数据包/资源包/光影
+        /// 绝大多数是 `.jar` 或 `.zip`，其中 `.jar` 占绝对多数。
+        /// </summary>
+        private static string GetDownloadExtension(string url)
+        {
+            try
+            {
+                var path = url;
+
+                // 去掉查询串与片段
+                var cut = path.IndexOfAny(new[] { '?', '#' });
+                if (cut >= 0)
+                    path = path[..cut];
+
+                var extension = Path.GetExtension(path);
+
+                // 必须是「. + 字母开头的纯字母数字」，且至少两个字符（如 .jar / .zip / .mcpack）。
+                // 这样可以挡掉把版本号当扩展名的情况（`/download/1.21.4` 的 `.4`），
+                // 也能挡住超长的路径段落（`weird.superlongextension` 是名字不是扩展名）。
+                if (string.IsNullOrWhiteSpace(extension) || extension.Length < 3)
+                    return ".jar";
+
+                var name = extension[1..];
+                if (!char.IsLetter(name[0]) || !name.All(char.IsLetterOrDigit))
+                    return ".jar";
+
+                // 常见扩展名最长 6 个字符（mcpack / mcworld）；更长的当路径段处理
+                return name.Length <= 6 ? extension.ToLowerInvariant() : ".jar";
+            }
+            catch
+            {
+                return ".jar";
+            }
+        }
+
+        /// <summary>
+        /// 按扩展名生成**唯一一项**的保存过滤器 —— 用户没有其他可选类型。
+        /// 找不到友好名称的扩展名就用「文件 (*.xxx)」兜底，仍然只给一项。
+        /// </summary>
+        private static string BuildFilter(string extension) => extension switch
+        {
+            ".jar" => "模组文件 (*.jar)|*.jar",
+            ".zip" => "压缩包 (*.zip)|*.zip",
+            ".litemod" => "LiteLoader 模组 (*.litemod)|*.litemod",
+            ".txt" => "文本文件 (*.txt)|*.txt",
+            ".json" => "JSON 文件 (*.json)|*.json",
+            ".yml" or ".yaml" => "YAML 文件 (*.yml;*.yaml)|*.yml;*.yaml",
+            ".mcpack" => "基岩版资源包 (*.mcpack)|*.mcpack",
+            ".mcworld" => "基岩版世界 (*.mcworld)|*.mcworld",
+            _ => $"文件 (*{extension})|*{extension}"
+        };
+
         private async void DownloadMod(string downloadUrl)
         {
             if (string.IsNullOrWhiteSpace(downloadUrl))
@@ -157,12 +214,22 @@ namespace VibrantbitLauncher.Views.Pages
                 return;
             }
 
+            // 文件类型由下载链接的扩展名决定，不给用户改：
+            // 选错类型会存出一个扩展名与实际内容不符的文件（如 .jar 存成 .zip），
+            // 游戏加载时识别不了。这里把过滤器锁死成唯一一项。
+            var extension = GetDownloadExtension(downloadUrl);
             var saveFileDialog = new SaveFileDialog
             {
                 FileName = Path.GetFileName(downloadUrl),
                 InitialDirectory = GetGamePath(),
-                Filter = "模组文件 (*.jar)|*.jar|压缩包 (*.zip)|*.zip|所有文件 (*.*)|*.*",
-                FilterIndex = 1
+                Filter = BuildFilter(extension),
+                FilterIndex = 1,
+                // 只允许保存为探测到的类型：用户改扩展名会被 Windows 追加回原扩展名
+                AddExtension = true,
+                DefaultExt = extension,
+                ValidateNames = true,
+                // 关掉「所有文件」这类兜底项后，CheckFileExists 之外无需额外校验
+                CheckPathExists = true
             };
 
             if (saveFileDialog.ShowDialog() != true)

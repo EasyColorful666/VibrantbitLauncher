@@ -112,9 +112,10 @@ namespace VibrantbitLauncher.ViewModels.Pages
                     var javas = await JavaHelper.FindJavasAsync();
                     asyncJavas = javas;
 
-                    // 将设置中的自定义 Java 也加入列表
+                    // 将设置中的自定义 Java 也加入列表（同样要过静态体检，
+                    // 避免把 PATH 里的 Oracle 转发器当成可用 Java 存进列表）
                     var customJava = MainWindowViewModel.MainModel.JavaPath;
-                    if (!string.IsNullOrEmpty(customJava) && File.Exists(customJava)
+                    if (JavaHelper.IsUsableJava(customJava)
                         && !asyncJavas.Any(j => string.Equals(j.JavaPath, customJava, StringComparison.OrdinalIgnoreCase)))
                     {
                         asyncJavas.Add(new JavaEntry { JavaPath = customJava, Is64bit = true });
@@ -225,12 +226,11 @@ namespace VibrantbitLauncher.ViewModels.Pages
                 launchingVersions.Add(McVersion);
             }
 
-            var diagLog = Path.Combine(AppContext.BaseDirectory, "launch_debug.log");
-            void Diag(string msg)
-            {
-                try { File.AppendAllText(diagLog, $"[{DateTime.Now:HH:mm:ss}] {msg}\n"); } catch { }
-                System.Diagnostics.Debug.WriteLine($"[RunDiag] {msg}");
-            }
+            // 启动过程的逐步骤诊断。
+            // 以前这里自己往 launch_debug.log 追加（另一份「日志系统」，散在程序目录里没人清理），
+            // 现在并入统一日志：等级是 Debug，所以默认的「信息」级别下不会污染日志，
+            // 需要排查「点了启动没反应」时，到设置里把等级调成「调试」再复现即可。
+            static void Diag(string msg) => Serilog.Log.Debug("[启动] {Message}", msg);
 
             try
             {
@@ -274,7 +274,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
                 {
                     Diag($"GetAppropriateJava threw: {ex.Message}");
                     var customJavaPath = MainWindowViewModel.MainModel.JavaPath;
-                    if (!string.IsNullOrEmpty(customJavaPath) && File.Exists(customJavaPath))
+                    if (JavaHelper.IsUsableJava(customJavaPath))
                     {
                         javaPath = new JavaEntry { JavaPath = customJavaPath, Is64bit = true };
                         Diag($"Using custom Java: {customJavaPath}");
@@ -293,20 +293,21 @@ namespace VibrantbitLauncher.ViewModels.Pages
                     }
                 }
 
-                if (javaPath == null || !File.Exists(javaPath.JavaPath))
+                // 启动前再体检一次选中的 Java：PATH 里的 Oracle 转发器（javapath / java8path）
+                // 会让 java.exe 弹出「could not find java.dll」的模态框，必须换成真正能用的那一份。
+                if (!JavaHelper.IsUsableJava(javaPath?.JavaPath))
                 {
-                    Diag($"Java path invalid: {javaPath?.JavaPath}");
-                    ShowError($"Java 路径无效: {javaPath?.JavaPath}");
-                    lock (launchingVersions) { launchingVersions.Remove(McVersion); }
-                    return;
-                }
+                    Diag($"Java not usable: {javaPath?.JavaPath}");
+                    var fallback = asyncJavas.FirstOrDefault(j => JavaHelper.IsUsableJava(j.JavaPath));
+                    if (fallback == null)
+                    {
+                        ShowError($"Java 不可用: {javaPath?.JavaPath}（该目录下没有 java.dll，请在设置里重新选择 Java）");
+                        lock (launchingVersions) { launchingVersions.Remove(McVersion); }
+                        return;
+                    }
 
-                // 调试：用 java.exe 代替 javaw.exe 以显示控制台输出
-                var debugJavaPath = javaPath.JavaPath.Replace("javaw.exe", "java.exe");
-                if (File.Exists(debugJavaPath))
-                {
-                    Diag($"Using java.exe for console output: {debugJavaPath}");
-                    javaPath = new JavaEntry { JavaPath = debugJavaPath, Is64bit = javaPath.Is64bit, JavaVersion = javaPath.JavaVersion };
+                    Diag($"Fallback to usable Java: {fallback.JavaPath}");
+                    javaPath = fallback;
                 }
 
                 // 检查账户
@@ -343,7 +344,9 @@ namespace VibrantbitLauncher.ViewModels.Pages
                 Diag("Launching manually (bypassing MinecraftLaunch runner)...");
                 ShowInfo($"正在启动 {McVersion}，请稍等...");
 
-                var rawProcess = LaunchMinecraftManually(mcFolder, McVersion, javaPath, MainWindowViewModel.MainModel.Account, MainWindowViewModel.MainModel.IsMicrosoftAccount, Diag);
+                // 读版本 JSON、拼 classpath、逐个检查几百个库文件是否存在 —— 全是同步文件 IO。
+                // 丢到线程池执行，否则点「运行」的那一瞬间 UI 会僵住。
+                var rawProcess = await Task.Run(() => LaunchMinecraftManually(mcFolder, McVersion, javaPath, MainWindowViewModel.MainModel.Account, MainWindowViewModel.MainModel.IsMicrosoftAccount, Diag));
                 Diag($"Manual launch returned, process null? {rawProcess == null}");
 
                 if (rawProcess == null)

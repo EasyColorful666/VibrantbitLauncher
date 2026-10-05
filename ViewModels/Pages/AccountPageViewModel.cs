@@ -162,7 +162,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[EnsureSteveSkin] {ex.Message}");
+                Serilog.Log.Warning(ex, "生成默认皮肤失败");
             }
         }
 
@@ -254,14 +254,34 @@ namespace VibrantbitLauncher.ViewModels.Pages
         public static extern IntPtr SetClipboardData(int uFormat, IntPtr hMem);
         public static void SetText(string text)
         {
-            if (!OpenClipboard(IntPtr.Zero))
+            // OpenClipboard 会被其它进程临时占用（剪贴板管理器、正在复制大量内容的程序），
+            // 失败时重试即可。注意：绝不能在这里递归调用自己 ——
+            // 一旦持续失败就是无限递归，直接栈溢出把进程带崩。
+            for (var attempt = 0; attempt < 5; attempt++)
             {
-                SetText(text);
-                return;
+                if (OpenClipboard(IntPtr.Zero))
+                {
+                    try
+                    {
+                        EmptyClipboard();
+
+                        var handle = Marshal.StringToHGlobalUni(text);
+                        if (SetClipboardData(13, handle) == IntPtr.Zero)
+                        {
+                            // 所有权没能交给系统，自己释放，避免这块内存泄漏
+                            Marshal.FreeHGlobal(handle);
+                        }
+                    }
+                    finally
+                    {
+                        CloseClipboard();
+                    }
+
+                    return;
+                }
+
+                System.Threading.Thread.Sleep(30);
             }
-            EmptyClipboard();
-            SetClipboardData(13, Marshal.StringToHGlobalUni(text));
-            CloseClipboard();
         }
 
         private async void AuthenticateMicrosoftAsync()
@@ -391,7 +411,7 @@ namespace VibrantbitLauncher.ViewModels.Pages
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[Offline] Steve skin setup failed: {ex.Message}");
+                    Serilog.Log.Warning(ex, "离线账户默认皮肤生成失败");
                 }
 
                 App.Current.Dispatcher.Invoke(() =>

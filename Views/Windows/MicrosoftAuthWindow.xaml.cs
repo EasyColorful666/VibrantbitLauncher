@@ -1,13 +1,14 @@
 using System;
 using System.Diagnostics;
 using System.Windows;
+using Wpf.Ui.Controls;
 
 namespace VibrantbitLauncher.Views.Windows
 {
     /// <summary>
     /// MicrosoftAuthWindow.xaml 的交互逻辑
     /// </summary>
-    public partial class MicrosoftAuthWindow : Window
+    public partial class MicrosoftAuthWindow : FluentWindow
     {
         /// <summary>用户是否点击了取消。</summary>
         public bool IsCancelled { get; private set; }
@@ -50,8 +51,23 @@ namespace VibrantbitLauncher.Views.Windows
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"无法打开浏览器：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                // 用 WPF-UI 的消息框，跟随明暗主题（原生 MessageBox 是固定的系统外观）
+                ShowError("无法打开浏览器", ex.Message);
             }
+        }
+
+        /// <summary>显示一个跟随主题的错误提示框（模态，挂在当前窗口上）。</summary>
+        private async void ShowError(string title, string message)
+        {
+            var box = new Wpf.Ui.Controls.MessageBox
+            {
+                Title = title,
+                Content = message,
+                CloseButtonText = "确定",
+                Owner = this,
+            };
+
+            await box.ShowDialogAsync();
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)

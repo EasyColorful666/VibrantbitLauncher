@@ -12,6 +12,7 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
@@ -50,6 +51,7 @@ namespace VibrantbitLauncher.Views.Pages
             {
                 debounceTimer.Stop();
                 versionView.Refresh();
+                UpdateCountText();
             };
 
             // 页面加载时开始异步加载数据，不阻塞 UI
@@ -100,6 +102,11 @@ namespace VibrantbitLauncher.Views.Pages
                 await App.Current.Dispatcher.InvokeAsync(() =>
                 {
                     versionView.Refresh();
+                    UpdateCountText();
+
+                    // 打开一小段"入场动画窗口"：接下来这批新建的列表项会依次淡入。
+                    // 窗口过期后（用户滚动才创建的容器）直接显示，避免滚动时条目"迟到"。
+                    _entranceUntilUtc = DateTime.UtcNow.AddMilliseconds(1200);
                 }, DispatcherPriority.Background);
             }
             catch (Exception ex)
@@ -120,6 +127,92 @@ namespace VibrantbitLauncher.Views.Pages
         {
             debounceTimer.Stop();
             debounceTimer.Start();
+        }
+
+        /// <summary>
+        /// 刷新搜索框右侧的计数文案。
+        /// 无搜索词时显示「共 N 个版本」；有搜索词时显示「匹配 M / 共 N 个版本」，
+        /// 让用户一眼看出筛掉了多少。
+        /// </summary>
+        private void UpdateCountText()
+        {
+            if (countText == null)
+                return;
+
+            var total = viewModel?.McVersions.Count ?? 0;
+            var matched = versionView?.Cast<object>().Count() ?? total;
+
+            countText.Text = string.IsNullOrEmpty(textBox.Text)
+                ? $"共 {total} 个版本"
+                : $"匹配 {matched} / 共 {total} 个版本";
+
+            emptyText.Visibility = matched == 0 && total > 0
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
+
+        /// <summary>
+        /// 整行卡片可点击：点一下直接进入安装页并带上该版本号。
+        /// 之前这里是一个独立的「下载」按钮，现在按钮已去掉，改由整张卡片承担点击。
+        /// </summary>
+        private void OnVersionCardClick(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is FrameworkElement { DataContext: McVersion version }
+                && viewModel?.DownloadCommand.CanExecute(version.Version) == true)
+            {
+                viewModel.DownloadCommand.Execute(version.Version);
+            }
+        }
+
+        /// <summary>入场动画窗口的截止时间；只有在这个时间点之前新建的列表项才播淡入。</summary>
+        private DateTime _entranceUntilUtc = DateTime.MinValue;
+
+        /// <summary>
+        /// 列表项进入视觉树时依次淡入：按索引错开（最多错开 9 项 ≈ 270ms），
+        /// 长列表刷出来时不会"啪"地整屏出现。
+        ///
+        /// 动画用 HoldEnd，结束后自然停在终态（Opacity=1 / Y=0）；基准值先写成起始态，
+        /// 这样 BeginTime 那段延迟里条目是"尚未出现"，而不是先亮一下再淡入。
+        /// 容器被虚拟化复用时不会再触发 Loaded，所以同一项不会重播。
+        /// </summary>
+        private void VersionItem_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is not ListBoxItem item)
+                return;
+
+            // 不在入场窗口内（例如用户滚动时才创建的容器）：直接显示，并清掉可能残留的动画
+            if (DateTime.UtcNow > _entranceUntilUtc)
+            {
+                item.BeginAnimation(OpacityProperty, null);
+                item.Opacity = 1;
+                return;
+            }
+
+            var index = listBox.ItemContainerGenerator.IndexFromContainer(item);
+            var delay = TimeSpan.FromMilliseconds(index <= 0 ? 0 : Math.Min(index, 9) * 30);
+
+            if (item.RenderTransform is not TranslateTransform transform)
+            {
+                transform = new TranslateTransform();
+                item.RenderTransform = transform;
+            }
+
+            item.Opacity = 0;
+            transform.Y = 14;
+
+            var fade = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(240))
+            {
+                BeginTime = delay,
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            var slide = new DoubleAnimation(14, 0, TimeSpan.FromMilliseconds(300))
+            {
+                BeginTime = delay,
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+
+            item.BeginAnimation(OpacityProperty, fade);
+            transform.BeginAnimation(TranslateTransform.YProperty, slide);
         }
     }
 

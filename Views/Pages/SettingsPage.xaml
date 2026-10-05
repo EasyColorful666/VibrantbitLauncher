@@ -1,4 +1,4 @@
-<Page
+﻿<Page
     x:Class="VibrantbitLauncher.Views.Pages.SettingsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -13,7 +13,7 @@
                                      IsDesignTimeCreatable=False}"
     d:DesignHeight="450"
     d:DesignWidth="800"
-    mc:Ignorable="d">
+    mc:Ignorable="d" ScrollViewer.CanContentScroll="True">
     <Page.DataContext>
         <vm:SettingsPageViewModel />
     </Page.DataContext>
@@ -21,24 +21,210 @@
         <helpers:EnumToBooleanConverter x:Key="EnumToBooleanConverter" />
     </Page.Resources>
 
-    <ScrollViewer
-        Height="{Binding ViewportHeight, RelativeSource={RelativeSource AncestorType=ScrollViewer}, Converter={StaticResource PagePaddingSubtract}, ConverterParameter=60}"
-        HorizontalScrollBarVisibility="Disabled"
-        VerticalScrollBarVisibility="Visible">
-        <StackPanel
-            MaxWidth="760"
-            Margin="{StaticResource PagePadding}"
-            HorizontalAlignment="Left">
+    <Grid Margin="{StaticResource PagePadding}" Style="{StaticResource PageRoot}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
-            <StackPanel Margin="{StaticResource PageHeaderMargin}">
-                <TextBlock Style="{StaticResource DisplayText}" Text="设置" />
-                <Border Margin="0,10,0,0" Style="{StaticResource AccentRule}" />
-                <TextBlock
-                    Margin="0,6,0,0"
-                    Style="{StaticResource CaptionText}"
-                    Text="外观、游戏路径与 Java 运行环境" />
-            </StackPanel>
+        <!--  页面标题  -->
+        <StackPanel Grid.Row="0" Margin="{StaticResource PageHeaderMargin}">
+            <TextBlock Style="{StaticResource DisplayText}" Text="设置" />
+            <Border Margin="0,10,0,0" Style="{StaticResource AccentRule}" />
+            <TextBlock
+                Margin="0,6,0,0"
+                Style="{StaticResource CaptionText}"
+                Text="外观、游戏路径与 Java 运行环境" />
+        </StackPanel>
 
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="216" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!--  左栏：分类  -->
+            <ListBox
+                x:Name="CategoryList"
+                Grid.Column="0"
+                Margin="0,0,24,0"
+                VerticalAlignment="Top"
+                Background="Transparent"
+                BorderThickness="0"
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                SelectionChanged="CategoryList_SelectionChanged">
+
+                <ListBox.ItemContainerStyle>
+                    <Style BasedOn="{StaticResource {x:Type ListBoxItem}}" TargetType="ListBoxItem">
+                        <Setter Property="Margin" Value="0,1" />
+                        <Setter Property="Padding" Value="12,9" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    </Style>
+                </ListBox.ItemContainerStyle>
+
+                <ListBoxItem IsSelected="True" Tag="0">
+                    <StackPanel Orientation="Horizontal">
+                        <ui:SymbolIcon Symbol="Home24" />
+                        <TextBlock Margin="10,0,0,0" Text="主页" />
+                    </StackPanel>
+                </ListBoxItem>
+                <ListBoxItem Tag="1">
+                    <StackPanel Orientation="Horizontal">
+                        <ui:SymbolIcon Symbol="PaintBrush24" />
+                        <TextBlock Margin="10,0,0,0" Text="个性化" />
+                    </StackPanel>
+                </ListBoxItem>
+                <ListBoxItem Tag="2">
+                    <StackPanel Orientation="Horizontal">
+                        <ui:SymbolIcon Symbol="Settings24" />
+                        <TextBlock Margin="10,0,0,0" Text="其他" />
+                    </StackPanel>
+                </ListBoxItem>
+            </ListBox>
+
+            <!--
+                右栏：三个面板叠放，切换时只改 Visibility。
+                不给 Content 反复赋值 —— 那会卸载并重建整棵视觉树。
+            -->
+            <Grid x:Name="PanelHost" Grid.Column="1">
+
+                <!--  ===== 主页：当前配置概览 + 快捷操作 =====  -->
+                <ScrollViewer
+                    x:Name="HomePanel"
+                    Padding="0,0,8,0"
+                    HorizontalScrollBarVisibility="Disabled"
+                    VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <ui:Card
+                            Margin="0,0,0,16"
+                            Padding="20,16"
+                            Style="{StaticResource SurfaceCard}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" MinWidth="88" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock
+                                    Margin="0,0,16,10"
+                                    Style="{StaticResource BodyText}"
+                                    Text="游戏目录" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    Margin="0,0,0,10"
+                                    Style="{StaticResource CaptionText}"
+                                    Text="{Binding MinecraftFolder}"
+                                    TextWrapping="Wrap" />
+
+                                <TextBlock
+                                    Grid.Row="1"
+                                    Margin="0,0,16,10"
+                                    Style="{StaticResource BodyText}"
+                                    Text="Java 版本" />
+                                <TextBlock
+                                    Grid.Row="1"
+                                    Grid.Column="1"
+                                    Margin="0,0,0,10"
+                                    Style="{StaticResource CaptionText}"
+                                    Text="{Binding SelectedJava.JavaVersion}" />
+
+                                <TextBlock
+                                    Grid.Row="2"
+                                    Margin="0,0,16,10"
+                                    Style="{StaticResource BodyText}"
+                                    Text="Java 路径" />
+                                <TextBlock
+                                    Grid.Row="2"
+                                    Grid.Column="1"
+                                    Margin="0,0,0,10"
+                                    Style="{StaticResource CaptionText}"
+                                    Text="{Binding SelectedJava.JavaPath}"
+                                    TextWrapping="Wrap" />
+
+                                <TextBlock
+                                    Grid.Row="3"
+                                    Margin="0,0,16,10"
+                                    Style="{StaticResource BodyText}"
+                                    Text="当前主题" />
+                                <TextBlock
+                                    Grid.Row="3"
+                                    Grid.Column="1"
+                                    Margin="0,0,0,10">
+                                    <TextBlock.Style>
+                                        <Style BasedOn="{StaticResource CaptionText}" TargetType="TextBlock">
+                                            <Setter Property="Text" Value="亮色" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding CurrentTheme}" Value="Dark">
+                                                    <Setter Property="Text" Value="暗色" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <TextBlock
+                                    Grid.Row="4"
+                                    Margin="0,0,16,0"
+                                    Style="{StaticResource BodyText}"
+                                    Text="日志" />
+                                <TextBlock
+                                    Grid.Row="4"
+                                    Grid.Column="1"
+                                    Style="{StaticResource CaptionText}"
+                                    Text="{Binding LogSummary}"
+                                    TextWrapping="Wrap" />
+                            </Grid>
+                        </ui:Card>
+
+                        <ui:Card Padding="20,16" Style="{StaticResource SurfaceCard}">
+                            <StackPanel>
+                                <TextBlock
+                                    Margin="0,0,0,12"
+                                    Style="{StaticResource SectionTitleText}"
+                                    Text="快捷操作" />
+                                <WrapPanel Orientation="Horizontal">
+                                    <ui:Button
+                                        Margin="0,0,8,8"
+                                        Padding="16,8"
+                                        Appearance="Secondary"
+                                        Command="{Binding OpenGameFolderCommand}"
+                                        Content="打开游戏目录"
+                                        Icon="{ui:SymbolIcon Symbol=FolderOpen24}" />
+                                    <ui:Button
+                                        Margin="0,0,8,8"
+                                        Padding="16,8"
+                                        Appearance="Secondary"
+                                        Command="{Binding OpenLogFolderCommand}"
+                                        Content="打开日志目录"
+                                        Icon="{ui:SymbolIcon Symbol=Folder24}" />
+                                    <ui:Button
+                                        Margin="0,0,8,8"
+                                        Padding="16,8"
+                                        Appearance="Secondary"
+                                        Command="{Binding RefreshJavaCommand}"
+                                        Content="重新检测 Java"
+                                        Icon="{ui:SymbolIcon Symbol=ArrowSync24}" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </ui:Card>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!--  ===== 个性化 =====  -->
+                <ScrollViewer
+                    x:Name="PersonalizationPanel"
+                    Padding="0,0,8,0"
+                    HorizontalScrollBarVisibility="Disabled"
+                    VerticalScrollBarVisibility="Auto"
+                    Visibility="Collapsed">
+                <StackPanel>
             <!--  ===== 个性化：明暗主题 / 主题色 / 渐变色 =====  -->
             <ui:Card
                 Margin="0,0,0,16"
@@ -290,7 +476,17 @@
                     </Grid>
                 </StackPanel>
             </ui:Card>
+                </StackPanel>
+                </ScrollViewer>
 
+                <!--  ===== 其他 =====  -->
+                <ScrollViewer
+                    x:Name="OtherPanel"
+                    Padding="0,0,8,0"
+                    HorizontalScrollBarVisibility="Disabled"
+                    VerticalScrollBarVisibility="Auto"
+                    Visibility="Collapsed">
+                <StackPanel>
             <!--  ===== 游戏设置 =====  -->
             <ui:Card
                 Margin="0,0,0,16"
@@ -367,6 +563,208 @@
                 </StackPanel>
             </ui:Card>
 
+            <!--  ===== 日志 =====  -->
+            <ui:Card
+                Margin="0,0,0,16"
+                Padding="20,16"
+                Style="{StaticResource SurfaceCard}">
+                <StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,4"
+                        Style="{StaticResource SectionTitleText}"
+                        Text="日志" />
+                    <TextBlock
+                        Margin="0,0,0,16"
+                        Style="{StaticResource CaptionText}"
+                        Text="启动失败、下载出错时，把等级调到「调试」再复现一次，然后导出日志即可提供给开发者定位。"
+                        TextWrapping="Wrap" />
+
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Style="{StaticResource BodyText}" Text="记录等级" />
+                            <TextBlock
+                                Margin="0,2,0,0"
+                                Style="{StaticResource CaptionText}"
+                                Text="等级越低越详细；日常使用保持「信息」即可"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <ComboBox
+                            Grid.Column="1"
+                            Width="180"
+                            VerticalAlignment="Center"
+                            DisplayMemberPath="Display"
+                            ItemsSource="{Binding LogLevels}"
+                            SelectedItem="{Binding SelectedLogLevel, Mode=TwoWay}" />
+                    </Grid>
+
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Style="{StaticResource BodyText}" Text="保留天数" />
+                            <TextBlock
+                                Margin="0,2,0,0"
+                                Style="{StaticResource CaptionText}"
+                                Text="超期的日志文件会自动清理"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <ComboBox
+                            Grid.Column="1"
+                            Width="180"
+                            VerticalAlignment="Center"
+                            ItemsSource="{Binding LogRetentionOptions}"
+                            SelectedItem="{Binding SelectedLogRetention, Mode=TwoWay}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding StringFormat={}{0} 天}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Style="{StaticResource BodyText}" Text="输出到调试器" />
+                            <TextBlock
+                                Margin="0,2,0,0"
+                                Style="{StaticResource CaptionText}"
+                                Text="同时在 Visual Studio 输出窗口显示（仅调试版有效）"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <ui:ToggleSwitch
+                            Grid.Column="1"
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding LogToDebugOutput, Mode=TwoWay}" />
+                    </Grid>
+
+                    <TextBlock
+                        Margin="0,0,0,6"
+                        Style="{StaticResource BodyText}"
+                        Text="日志目录" />
+                    <ui:TextBox
+                        IsReadOnly="True"
+                        Text="{Binding LogDirectory, Mode=OneWay}"
+                        ToolTip="{Binding LogDirectory}" />
+                    <StackPanel Margin="0,8,0,4" Orientation="Horizontal">
+                        <ui:Button Command="{Binding OpenLogFolderCommand}" Content="打开日志目录" />
+                        <ui:Button
+                            Margin="8,0,0,0"
+                            Click="OnExportLog"
+                            Content="导出日志" />
+                        <ui:Button
+                            Margin="8,0,0,0"
+                            Command="{Binding ClearLogsCommand}"
+                            Content="清空日志" />
+                    </StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,16"
+                        Style="{StaticResource CaptionText}"
+                        Text="{Binding LogActionMessage}"
+                        TextWrapping="Wrap" />
+
+                    <Grid Margin="0,0,0,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Style="{StaticResource BodyText}" Text="最近日志" />
+                            <TextBlock
+                                Margin="0,2,0,0"
+                                Style="{StaticResource CaptionText}"
+                                Text="{Binding LogSummary}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <ComboBox
+                            Grid.Column="1"
+                            Width="140"
+                            VerticalAlignment="Center"
+                            DisplayMemberPath="Display"
+                            ItemsSource="{Binding LogFilters}"
+                            SelectedItem="{Binding SelectedLogFilter, Mode=TwoWay}" />
+                    </Grid>
+
+                    <Border
+                        Margin="0,6,0,0"
+                        Padding="12,8"
+                        Background="{DynamicResource ControlFillColorDefaultBrush}"
+                        CornerRadius="{StaticResource RadiusM}">
+                        <ListBox
+                            MaxHeight="260"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            ItemsSource="{Binding RecentLogs}"
+                            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                            ScrollViewer.VerticalScrollBarVisibility="Auto"
+                            VirtualizingPanel.IsVirtualizing="True"
+                            VirtualizingPanel.VirtualizationMode="Recycling">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="Margin" Value="0" />
+                                    <Setter Property="Focusable" Value="False" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ListBoxItem">
+                                                <ContentPresenter />
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock
+                                            Grid.Column="0"
+                                            FontFamily="Consolas"
+                                            Style="{StaticResource CaptionText}"
+                                            Text="{Binding TimeText}" />
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            Margin="8,0,0,0"
+                                            FontFamily="Consolas"
+                                            FontWeight="SemiBold"
+                                            Foreground="{Binding LevelBrush}"
+                                            Style="{StaticResource CaptionText}"
+                                            Text="{Binding LevelText}" />
+                                        <StackPanel Grid.Column="2" Margin="8,0,0,0">
+                                            <TextBlock
+                                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                Style="{StaticResource CaptionText}"
+                                                Text="{Binding Message}"
+                                                TextWrapping="Wrap" />
+                                            <TextBlock
+                                                MaxHeight="80"
+                                                Foreground="{Binding LevelBrush}"
+                                                Style="{StaticResource CaptionText}"
+                                                Text="{Binding ExceptionText}"
+                                                TextWrapping="Wrap"
+                                                Visibility="{Binding HasException, Converter={StaticResource BoolToVisibility}}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
+                </StackPanel>
+            </ui:Card>
+
             <!--  ===== 关于 =====  -->
             <ui:Card Padding="20,16" Style="{StaticResource SurfaceCard}">
                 <StackPanel>
@@ -390,6 +788,9 @@
                         TextWrapping="Wrap" />
                 </StackPanel>
             </ui:Card>
-        </StackPanel>
-    </ScrollViewer>
+                </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </Grid>
+    </Grid>
 </Page>
