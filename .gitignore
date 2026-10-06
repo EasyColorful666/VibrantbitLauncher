@@ -10,3 +10,7 @@
 /bin/x64/Release/net9.0-windows/win-x64
 /bin
 /.reasonix
+/VibrantbitLauncher.Avalonia/.vs
+/VibrantbitLauncher.Avalonia/bin/Debug/net10.0
+/VibrantbitLauncher.Avalonia/bin/Release/net10.0/cs
+/VibrantbitLauncher.Avalonia/bin/Release/net10.0
