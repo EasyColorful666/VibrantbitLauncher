@@ -31,7 +31,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PROJECT: VibrantbitLauncher.Avalonia.csproj
   APP_NAME: VibrantbitLauncher.Avalonia
   CONFIGURATION: Release
   DOTNET_VERSION: '10.0.x'
@@ -74,20 +73,20 @@ jobs:
             nuget-${{ runner.os }}-
 
       - name: Restore
-        run: dotnet restore "$PROJECT"
+        run: dotnet restore "VibrantbitLauncher.Avalonia.csproj"
 
       # 从 csproj 的 <Version> 读取版本号，供 macOS Info.plist 使用（避免版本写死）
       - name: Read version from csproj
         shell: bash
         run: |
-          VERSION=$(sed -n 's|.*<Version>\([^<]*\)</Version>.*|\1|p' "$PROJECT" | head -n1)
+          VERSION=$(sed -n 's|.*<Version>\([^<]*\)</Version>.*|\1|p' "VibrantbitLauncher.Avalonia.csproj" | head -n1)
           echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "Detected version: $VERSION"
 
       - name: Publish ${{ matrix.rid }}
         shell: bash
         run: |
-          dotnet publish "$PROJECT" \
+          dotnet publish "VibrantbitLauncher.Avalonia.csproj" \
             -c "$CONFIGURATION" \
             -r "${{ matrix.rid }}" \
             --no-self-contained \
